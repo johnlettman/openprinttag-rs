@@ -120,7 +120,7 @@ impl Config {
     ///
     /// # Example
     /// ```rust
-    /// use openprinttag_codegen::{config::Config, data::get_data_path};
+    /// use openprinttag_codegen::{data::get_data_path, Config};
     ///
     /// let path = get_data_path("config_nfcv");
     /// let config = Config::load_from_path(path).expect("should load from path");
