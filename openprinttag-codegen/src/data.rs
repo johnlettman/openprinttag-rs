@@ -175,6 +175,9 @@ where
 /// - `S`: Type of the file name (typically `str` or [`String`]).
 /// - `D`: The target deserializable type implementing [`DeserializeOwned`].
 ///
+/// # Arguments
+/// - `name`: Name of the schema to load.
+///
 /// # Errors
 /// Propagates the same errors as [`load_from_path`]:
 ///
@@ -209,16 +212,55 @@ where
     load_from_path(get_data_path(name))
 }
 
+/// Conditionally loads and deserializes a schema from a built-in YAML schema
+/// file.
+///
+/// This helper wraps [`load`], returning an error if no file name is provided.
+/// It is useful in cases where certain data files are optional -- for example,
+/// when a field in a larger configuration may or may not reference an external
+/// YAML schema.
+///
+/// # Type Parameters
+/// - `S`: Type of the optional file name (typically `str` or [`String`]).
+/// - `D`: The target deserializable type implementing [`DeserializeOwned`].
+///
+/// # Arguments
+/// - `name`: Name of the schema to load.
+///
+/// # Returns
+/// - `Ok` if a file name is provided and successfully loaded.
+/// - `Err` of [`Error::NoDataPath`] — if `name` is [`None`].
+/// - Other variants of [`Error`] if the file cannot be read or parsed.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::{data::maybe_load, Error};
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyConfig {
+///     #[serde(default)]
+///     mime_type: Option<String>,
+/// }
+///
+/// let config: MyConfig =
+///     maybe_load(Some("config_nfcv")).expect("should load and deserialize config_nfcv");
+///
+/// let missing: Result<MyConfig, _> = maybe_load::<&str, _>(None);
+/// assert!(matches!(missing, Err(Error::NoDataPath)));
+/// ```
+///
+/// # See also
+/// - [`load`] for unconditional loading.
+/// - [`get_data_path`] for path resolution.
 pub fn maybe_load<S, D>(name: Option<S>) -> crate::Result<D>
 where
     S: AsRef<str>,
     D: DeserializeOwned,
 {
-    if let Some(name) = name {
-        return load(name);
+    match name {
+        Some(name) => load(name),
+        None => Err(Error::NoDataPath),
     }
-
-    Err(crate::Error::NoDataPath)
 }
 
 pub fn load_mapped_from_path<P, NM, N, O, D>(path: P, name_map: &NM) -> crate::Result<D>
