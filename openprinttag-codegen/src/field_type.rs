@@ -31,7 +31,6 @@ impl FieldType {
     }
 
     pub fn make_definitions(&self) -> Vec<syn::Item> {
-        use syn::{punctuated::Punctuated, Generics, Item, ItemEnum};
         let mut definitions = Vec::new();
 
         match self {
@@ -44,27 +43,7 @@ impl FieldType {
 
             Self::Enum { name, description, variants }
             | Self::EnumArray { name, description, variants } => {
-                let attrs = description
-                    .as_ref()
-                    .and_then(|d| gen::make_doc_attribute(d).ok())
-                    .into_iter()
-                    .collect::<Vec<_>>();
-
-                let vis = gen::make_pub_visibility();
-                let ident = gen::make_ident(name);
-
-                let variants: Punctuated<_, _> =
-                    variants.iter().filter_map(|v| v.make_variant(name)).collect();
-
-                definitions.push(Item::Enum(ItemEnum {
-                    attrs,
-                    vis,
-                    enum_token: Default::default(),
-                    ident,
-                    generics: Generics::default(),
-                    variants,
-                    brace_token: Default::default(),
-                }));
+                definitions.push(gen::make_enum_item(name, description.as_ref(), &variants))
             },
         }
 

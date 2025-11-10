@@ -1,10 +1,12 @@
+use crate::{gen, EnumVariants};
 use proc_macro2::{Ident, Span};
 use syn::{
-    AttrStyle, Attribute, Expr, ExprLit, Lit, LitInt, LitStr, Meta, MetaNameValue, Type, TypeArray,
-    TypePath, Visibility,
+    punctuated::Punctuated, AttrStyle, Attribute, Expr, ExprLit, Generics, Item, ItemEnum, Lit,
+    LitInt, LitStr, Meta, MetaNameValue, Type, TypeArray, TypePath, Visibility,
 };
 
-/// Creates a new [`Ident`] from a string, using [`Span::call_site`] as its span.
+/// Creates a new [`Ident`] from a string, using [`Span::call_site`] as its
+/// span.
 pub(crate) fn make_ident<S: AsRef<str>>(name: S) -> Ident {
     Ident::new(name.as_ref(), Span::call_site())
 }
@@ -23,7 +25,8 @@ pub(crate) fn make_type<S: AsRef<str>>(path: S) -> crate::Result<Type> {
 
 /// Returns a public [`Visibility`] marker (`pub`).
 ///
-/// Used to mark generated types, structs, or enums as public within generated code.
+/// Used to mark generated types, structs, or enums as public within generated
+/// code.
 #[inline]
 pub(crate) fn make_pub_visibility() -> Visibility {
     Visibility::Public(Default::default())
@@ -51,12 +54,11 @@ pub(crate) fn make_array_type<E: AsRef<str>>(elem: E, len: usize) -> crate::Resu
 
 /// Constructs a `#[doc = "..."]` [`Attribute`] for generated items.
 ///
-/// Used to attach documentation comments to generated enums, variants, or fields
-/// at the syntax tree level.
+/// Used to attach documentation comments to generated enums, variants, or
+/// fields at the syntax tree level.
 ///
 /// # Errors
 /// - [`crate::Error::GenError`] if the internal `doc` path cannot be parsed.
-///
 pub(crate) fn make_doc_attribute<S: AsRef<str>>(doc: S) -> crate::Result<Attribute> {
     Ok(Attribute {
         pound_token: Default::default(),
@@ -70,5 +72,30 @@ pub(crate) fn make_doc_attribute<S: AsRef<str>>(doc: S) -> crate::Result<Attribu
                 lit: Lit::Str(LitStr::new(doc.as_ref(), Span::call_site())),
             }),
         }),
+    })
+}
+
+pub(crate) fn make_enum_item<N, D>(name: N, description: Option<D>, variants: &EnumVariants) -> Item
+where
+    N: AsRef<str>,
+    D: AsRef<str>,
+{
+    let attrs =
+        description.and_then(|d| make_doc_attribute(d).ok()).into_iter().collect::<Vec<_>>();
+
+    let vis = make_pub_visibility();
+    let ident = make_ident(name.as_ref());
+
+    let variants: Punctuated<_, _> =
+        variants.iter().filter_map(|v| v.make_variant(name.as_ref())).collect();
+
+    Item::Enum(ItemEnum {
+        attrs,
+        vis,
+        enum_token: Default::default(),
+        ident,
+        generics: Generics::default(),
+        variants,
+        brace_token: Default::default(),
     })
 }
