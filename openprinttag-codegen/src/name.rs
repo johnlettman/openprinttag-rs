@@ -126,6 +126,36 @@ pub fn to_enum_reference_md<EN: AsRef<str>, EV: AsRef<str>>(name: EN, variant: E
     format!("[`{}`][{}]", to_camel(variant.as_ref()), to_enum_reference(name, variant))
 }
 
+/// Builds a Markdown-formatted, comma-separated list of links to Rust enum
+/// variants.
+///
+/// Each element uses [`to_enum_reference_md`] for consistent formatting.
+/// Returns [`None`] if the input list is empty.
+///
+/// Produces output like:
+/// ```md
+/// [`PC`][MaterialType::PC], [`ABS`][MaterialType::ABS]
+/// ```
+///
+/// # Type Parameters
+/// - `EN`: Type of the enum name (typically `str` or [`String`]).
+/// - `EV`: Type of the enum variant name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Enum name.
+/// - `variants`: Collection of enum variant names.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::name;
+///
+/// let links = name::to_enum_references_md("material_type", &vec!["pc", "abs"]).unwrap();
+/// assert_eq!(links, "[`PC`][MaterialType::PC], [`ABS`][MaterialType::ABS]");
+/// ```
+///
+/// # See also
+/// - [`to_enum_reference_md`] for single-variant formatting.
+/// - [`to_enum_reference`] for plain Rust references.
 pub fn to_enum_references_md<EN: AsRef<str>, EV: AsRef<str>>(
     name: EN,
     variants: &Vec<EV>,
