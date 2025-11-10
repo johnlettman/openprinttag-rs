@@ -1,5 +1,6 @@
-use crate::{de, EnumVariants};
+use crate::{de, EnumVariants, Error};
 use serde::de::DeserializeOwned;
+use serde_norway::Value;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -36,18 +37,65 @@ pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
     crate_dir.join("data").join(file_name)
 }
 
-pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<serde_norway::Value> {
-    let data_string = fs::read_to_string(path.as_ref()).map_err(|source| {
-        crate::Error::DataLoadError { path: path.as_ref().to_path_buf(), source }
-    })?;
+/// Loads and parses a YAML file from the disk into a generic [`Value`].
+///
+/// This function reads the file at the specified path, converts it to a UTF-8
+/// string, and then deserializes it into a dynamically typed [`Value`]. It
+/// forms the low-level foundation for higher-level loaders such as
+/// [`load_mapped_from_path`] or [`load_enum_variants_from_path`].
+///
+/// # Errors
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both error variants include the full path to the file.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::data::{get_data_path, load_value_from_path};
+///
+/// let path = get_data_path("config_nfcv");
+/// let value = load_value_from_path(path).expect("should load YAML path");
+///
+/// assert!(value.is_sequence() || value.is_mapping());
+/// ```
+pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
+    let data_string = fs::read_to_string(path.as_ref())
+        .map_err(|source| Error::DataLoadError { path: path.as_ref().to_path_buf(), source })?;
 
-    Ok(serde_norway::from_str(&data_string).map_err(|source| crate::Error::YAMLParseError {
-        path: path.as_ref().to_path_buf(),
-        source,
-    })?)
+    Ok(serde_norway::from_str(&data_string)
+        .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })?)
 }
 
-pub fn load_value<S: AsRef<str>>(name: S) -> crate::Result<serde_norway::Value> {
+/// Loads and parses a YAML data file from the crate’s built-in `data` directory
+/// into a generic [`Value`].
+///
+/// This is a convenience wrapper around [`load_value_from_path`], which
+/// automatically resolves the file path relative to the crate’s `data`
+/// directory using [`get_data_path`].
+///
+/// # Errors
+/// Propagates the same errors as [`load_value_from_path`]:
+///
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both errors include the full absolute path for debugging.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::data::load_value;
+///
+/// let value = load_value("material_type_enum").expect("should load YAML file");
+///
+/// assert!(value.is_sequence() || value.is_mapping());
+/// ```
+///
+/// # See also
+/// - [`get_data_path`] for path resolution
+/// - [`load_value_from_path`] for loading from arbitrary locations
+#[inline]
+pub fn load_value<S: AsRef<str>>(name: S) -> crate::Result<Value> {
     load_value_from_path(get_data_path(name))
 }
 
