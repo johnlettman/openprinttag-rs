@@ -1,8 +1,9 @@
 use crate::{gen, EnumVariants};
 use proc_macro2::{Ident, Span};
 use syn::{
-    punctuated::Punctuated, AttrStyle, Attribute, Expr, ExprLit, Generics, Item, ItemEnum, Lit,
-    LitInt, LitStr, Meta, MetaNameValue, Type, TypeArray, TypePath, Visibility,
+    punctuated::Punctuated, AttrStyle, Attribute, Expr, ExprLit, Fields, FieldsNamed, Generics,
+    Item, ItemEnum, ItemStruct, Lit, LitInt, LitStr, Meta, MetaNameValue, Type, TypeArray,
+    TypePath, Visibility,
 };
 
 /// Creates a new [`Ident`] from a string, using [`Span::call_site`] as its
@@ -97,5 +98,29 @@ where
         generics: Generics::default(),
         variants,
         brace_token: Default::default(),
+    })
+}
+
+pub(crate) fn make_struct_item<N, D>(name: D, description: Option<D>, fields: crate::Fields) -> Item
+where
+    N: AsRef<str>,
+    D: AsRef<str>,
+{
+    let attrs =
+        description.and_then(|d| make_doc_attribute(d).ok()).into_iter().collect::<Vec<_>>();
+
+    let vis = make_pub_visibility();
+    let ident = make_ident(name.as_ref());
+    let named: Punctuated<_, _> = fields.iter().filter_map(|f| f.make_field()).collect();
+    let fields = Fields::Named(FieldsNamed { named, brace_token: Default::default() });
+
+    Item::Struct(ItemStruct {
+        attrs,
+        vis,
+        struct_token: Default::default(),
+        ident,
+        generics: Generics::default(),
+        fields,
+        semi_token: Default::default(),
     })
 }
