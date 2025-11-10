@@ -5,6 +5,27 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Constructs an absolute path to a data file located under the crate’s `data/`
+/// directory.
+///
+/// The function resolves paths relative to the crate root using
+/// `CARGO_MANIFEST_DIR` environment variable at compile time and automatically
+/// appends a `.yaml` extension if one is not already present.
+///
+/// This is used for resolving schema or enum data files, such as
+/// - `data/material_type_enum.yaml`
+/// - `data/config_nfcv.yaml`
+///
+/// # Examples
+/// ```rust
+/// use openprinttag_codegen::data::get_data_path;
+///
+/// let path = get_data_path("material_type_enum");
+/// assert!(path.ends_with("data/material_type_enum.yaml"));
+///
+/// let path = get_data_path("config_nfcv.yaml");
+/// assert!(path.ends_with("data/config_nfcv.yaml"));
+/// ```
 pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
     let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
 
