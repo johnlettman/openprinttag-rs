@@ -1,0 +1,19 @@
+[package]
+name = "openprinttag-rs"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+
+[workspace]
+members = [
+    "openprinttag-codegen"
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["John P. Lettman <the@johnlettman.com>"]
+edition = "2021"
+
+[dependencies]
+strum = {  version = "0.27", features = ["derive"] }
