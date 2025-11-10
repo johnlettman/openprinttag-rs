@@ -116,7 +116,7 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
 pub fn load_value<N: AsRef<str>>(name: N) -> crate::Result<Value> {
     load_value_from_path(get_data_path(name))
 }
-/// Loads and deserializes a typed data structure from a YAML file on disk.
+/// Loads and deserializes a schema from a YAML file on disk.
 ///
 /// This is a generic helper built on top of [`load_value_from_path`]. It reads
 /// a YAML schema file, parses it into a [`Value`], and then deserializes that
@@ -163,6 +163,44 @@ where
         .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })
 }
 
+/// Loads and deserializes a schema from a built-in YAML schema file located in
+/// the crate’s `data` directory.
+///
+/// This is a convenience wrapper around [`load_from_path`]. It resolves the
+/// full file path automatically using [`get_data_path`], reads the YAML schema
+/// file, then deserializes that value into any type `D` that implements
+/// [`DeserializeOwned`].
+///
+/// # Type Parameters
+/// - `S`: Type of the file name (typically `str` or [`String`]).
+/// - `D`: The target deserializable type implementing [`DeserializeOwned`].
+///
+/// # Errors
+/// Propagates the same errors as [`load_from_path`]:
+///
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both errors include the full absolute path for debugging.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::data::load;
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyConfig {
+///     #[serde(default)]
+///     mime_type: Option<String>,
+/// }
+///
+/// let config: MyConfig = load("config_nfcv").expect("should load and deserialize config_nfcv");
+///
+/// assert_eq!(config.mime_type, Some("application/vnd.openprinttag".to_string()));
+/// ```
+///
+/// # See also
+/// - [`get_data_path`] for path resolution.
+/// - [`load_from_path`] for loading from arbitrary paths.
 pub fn load<S, D>(name: S) -> crate::Result<D>
 where
     S: AsRef<str>,
