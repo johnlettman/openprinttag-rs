@@ -62,9 +62,9 @@ pub fn description<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    struct DescVisitor;
+    struct DescriptionVisitor;
 
-    impl<'de> de::Visitor<'de> for DescVisitor {
+    impl<'de> de::Visitor<'de> for DescriptionVisitor {
         type Value = Option<String>;
 
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -122,5 +122,5 @@ where
         }
     }
 
-    deserializer.deserialize_any(DescVisitor)
+    deserializer.deserialize_any(DescriptionVisitor)
 }
