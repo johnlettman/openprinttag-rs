@@ -339,6 +339,60 @@ where
         .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })
 }
 
+/// Loads, renames, and deserializes a schema from a built-in YAML schema file
+/// located in the crate’s `data` directory.
+///
+/// This is a convenience wrapper around [`load_mapped_from_path`].
+///
+/// # Type Parameters
+/// - `P`: Type of the file path (typically [`Path`]).
+/// - `NM`: A mapping type implementing `IntoIterator<Item = (&N, &O)>`.
+/// - `N`: Type of each *new* key in the mapping (usually `&str` or [`String`]).
+/// - `O`: Type of each *old* key in the mapping (usually `&str` or [`String`]).
+/// - `D`: The target deserializable type implementing [`DeserializeOwned`].
+///
+/// # Arguments
+/// - `path`: Path to the YAML schema file to be loaded.
+/// - `name_map`: A key-renaming map, typically a [`NameMap`] or
+///   [`BTreeMap<String, String>`][BTreeMap], where each `(new_name, old_name)`
+///   pair defines a field rename rule.
+///
+/// # Errors
+/// Propagates the same errors as [`load_mapped_from_path`]:
+///
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both errors include the full absolute path for debugging.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::{
+///     data::{get_data_path, load_mapped},
+///     de,
+/// };
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyConfig {
+///     #[serde(default)]
+///     real_mime_type: Option<String>,
+/// }
+///
+/// let mut name_map = de::NameMap::new();
+/// name_map.insert("real_mime_type".into(), "mime_type".into());
+///
+/// let config: MyConfig = load_mapped("config_nfcv", &name_map)
+///     .expect("should load and rename fields before deserialization");
+///
+/// assert_eq!(config.real_mime_type, Some("application/vnd.openprinttag".to_string()))
+/// ```
+///
+/// # See also
+/// - [`load_mapped_from_path`] for loading from arbitrary paths.
+/// - [`de::rename_fields`] for renaming logic.
+/// - [`de::NameMap`] for key mapping type.
+/// - [`get_data_path`] for path resolution.
+#[inline]
 pub fn load_mapped<S, NM, N, O, D>(name: S, name_map: &NM) -> crate::Result<D>
 where
     S: AsRef<str>,
