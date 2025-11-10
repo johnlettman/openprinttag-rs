@@ -1,5 +1,24 @@
 use serde::{de, Deserialize, Deserializer};
 use serde_norway::{mapping::Entry, Value};
+use std::collections::BTreeMap;
+
+/// A mapping of field names used for renaming or field inference.
+///
+/// The [`NameMap`] is typically used to pass a key–value mapping into functions
+/// like [`rename_fields`], [`load_mapped`], or [`load_mapped_from_path`], where
+/// each `(new_name, old_name)` pair defines how to rename fields during
+/// deserialization.
+///
+/// # Example
+/// ```rust
+/// let mut name_map = NameMap::new();
+/// name_map.insert("full_name".into(), "display_name".into());
+/// name_map.insert("short_name".into(), "name".into());
+/// ```
+///
+/// [`load_mapped`]: crate::data::load_mapped
+/// [`load_mapped_from_path`]: crate::data::load_mapped_from_path
+pub type NameMap = BTreeMap<String, String>;
 
 /// Recursively rename keys in a [`Value`] according to a provided mapping of
 /// new-from-old (e.g., `<new, old>`) key names.

@@ -1,12 +1,9 @@
 use crate::{de, EnumVariants};
 use serde::de::DeserializeOwned;
 use std::{
-    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
 };
-
-pub type NameMap = BTreeMap<String, String>;
 
 pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
     let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -100,14 +97,14 @@ where
     NF: AsRef<str>,
     DNF: AsRef<str>,
 {
-    let mut name_map = BTreeMap::new();
+    let mut name_map = de::NameMap::new();
 
     if let Some(name_field) = name_field {
-        name_map.insert("name", name_field.as_ref().to_string());
+        name_map.insert("name".to_string(), name_field.as_ref().to_string());
     }
 
     if let Some(display_name_field) = display_name_field {
-        name_map.insert("display_name", display_name_field.as_ref().to_string());
+        name_map.insert("display_name".to_string(), display_name_field.as_ref().to_string());
     }
 
     if name_map.is_empty() {
