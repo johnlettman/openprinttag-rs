@@ -263,6 +263,68 @@ where
     }
 }
 
+/// Loads, renames, and deserializes a schema from a YAML schema file on disk.
+///
+/// This function extends [`load_from_path`] by first applying key remapping to
+/// the parsed YAML data before deserializing it into type `D`. It is useful for
+/// cases where field names in the external YAML files _differ_ from the
+/// expected Rust struct field names, or when aliases must be normalized for
+/// compatibility.
+///
+/// Internally, it:
+/// 1. Reads and parses the YAML file into a [`Value`].
+/// 2. Applies the provided [`de::NameMap`] (or any iterable of key-value pairs)
+///    to rename top-level and nested keys using [`de::rename_fields`].
+/// 3. Deserializes the transformed value into the specified type `D`.
+///
+/// # Type Parameters
+/// - `P`: Type of the file path (typically [`Path`]).
+/// - `NM`: A mapping type implementing `IntoIterator<Item = (&N, &O)>`.
+/// - `N`: Type of each *new* key in the mapping (usually `&str` or [`String`]).
+/// - `O`: Type of each *old* key in the mapping (usually `&str` or [`String`]).
+/// - `D`: The target deserializable type implementing [`DeserializeOwned`].
+///
+/// # Arguments
+/// - `path`: Path to the YAML schema file to be loaded.
+/// - `name_map`: A key-renaming map, typically a [`NameMap`] or
+///   [`BTreeMap<String, String>`][BTreeMap], where each `(new_name, old_name)`
+///   pair defines a field rename rule.
+///
+/// # Errors
+/// Propagates the same errors as [`load_value_from_path`]:
+///
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both errors include the full absolute path for debugging.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::{
+///     data::{get_data_path, load_mapped_from_path},
+///     de,
+/// };
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyConfig {
+///     #[serde(default)]
+///     real_mime_type: Option<String>,
+/// }
+///
+/// let mut name_map = de::NameMap::new();
+/// name_map.insert("real_mime_type".into(), "mime_type".into());
+///
+/// let path = get_data_path("config_nfcv");
+/// let config: MyConfig = load_mapped_from_path(path, &name_map)
+///     .expect("should load and rename fields before deserialization");
+///
+/// assert_eq!(config.real_mime_type, Some("application/vnd.openprinttag".to_string()))
+/// ```
+///
+/// # See also
+/// - [`load_from_path`] for simple typed loading.
+/// - [`de::rename_fields`] for renaming logic.
+/// - [`de::NameMap`] for key mapping type.
 pub fn load_mapped_from_path<P, NM, N, O, D>(path: P, name_map: &NM) -> crate::Result<D>
 where
     P: AsRef<Path>,
@@ -273,10 +335,8 @@ where
 {
     let mut value = load_value_from_path(path.as_ref())?;
     de::rename_fields(&mut value, name_map);
-    serde_norway::from_value(value).map_err(|source| crate::Error::YAMLParseError {
-        path: path.as_ref().to_path_buf(),
-        source,
-    })
+    serde_norway::from_value(value)
+        .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })
 }
 
 pub fn load_mapped<S, NM, N, O, D>(name: S, name_map: &NM) -> crate::Result<D>
