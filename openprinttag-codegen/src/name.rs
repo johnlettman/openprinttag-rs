@@ -1,8 +1,33 @@
+/// Known acronyms and chemical abbreviations that should remain uppercase when
+/// converting names to CamelCase identifiers.
+///
+/// This ensures that terms like `"ptfe"` and `"material_id"` are formatted as
+/// `"PTFE"` and `"MaterialID"` instead of `"Ptfe"` or `"MaterialId"`.
 pub const ALL_CAPS: &[&str] = &[
     "PTFE", "PVC", "ABS", "PC", "PE", "PP", "PET", "PBT", "PA", "PU", "ESD", "FFF", "SLA", "EMI",
     "ID", "UUID", "GTIN",
 ];
 
+/// Converts a snake_case or underscore-separated name into a Rust-style
+/// CamelCase identifier.
+///
+/// Known acronyms (from [`ALL_CAPS`]) are preserved in uppercase. For all other
+/// segments, the first letter is capitalized and the rest are lowercased.
+///
+/// # Type Parameters
+/// - `S`: Type of the name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Name to convert.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::name;
+///
+/// assert_eq!(name::to_camel("contains_glass"), "ContainsGlass");
+/// assert_eq!(name::to_camel("contains_ptfe"), "ContainsPTFE");
+/// assert_eq!(name::to_camel("material_class_enum"), "MaterialClassEnum");
+/// ```
 pub fn to_camel<S: AsRef<str>>(name: S) -> String {
     name.as_ref()
         .split('_')
