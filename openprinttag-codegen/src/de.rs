@@ -33,8 +33,8 @@ pub type NameMap = BTreeMap<String, String>;
 /// # Type Parameters
 /// - `N`: Type of the *new* key name (typically `str` or [`String`]).
 /// - `O`: Type of the *old* key name (typically `str` or [`String`]).
-/// - `NM`: The name map container, which must implement
-///     `IntoIterator<Item = (&N, &O)>`.
+/// - `NM`: The name map container, which must implement `IntoIterator<Item =
+///   (&N, &O)>`.
 ///
 /// # Arguments
 /// - `value`: A mutable reference to a [`Value`] structure (mapping, sequence,

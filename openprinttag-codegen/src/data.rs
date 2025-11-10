@@ -6,7 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Constructs an absolute path to a schema file located under the crate’s `data` directory.
+/// Constructs an absolute path to a schema file located under the crate’s
+/// `data` directory.
 ///
 /// The function resolves paths relative to the crate root using
 /// `CARGO_MANIFEST_DIR` environment variable at compile time and automatically
@@ -78,8 +79,8 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
         .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })?)
 }
 
-/// Loads and parses a YAML schema file from the crate’s built-in `data` directory
-/// into a generic [`Value`].
+/// Loads and parses a YAML schema file from the crate’s built-in `data`
+/// directory into a generic [`Value`].
 ///
 /// This is a convenience wrapper around [`load_value_from_path`], which
 /// automatically resolves the file path relative to the crate’s `data`
@@ -109,21 +110,57 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
 /// ```
 ///
 /// # See also
-/// - [`get_data_path`] for path resolution
-/// - [`load_value_from_path`] for loading from arbitrary locations
+/// - [`get_data_path`] for path resolution.
+/// - [`load_value_from_path`] for loading into untyped [`Value`].
 #[inline]
 pub fn load_value<N: AsRef<str>>(name: N) -> crate::Result<Value> {
     load_value_from_path(get_data_path(name))
 }
-
+/// Loads and deserializes a typed data structure from a YAML file on disk.
+///
+/// This is a generic helper built on top of [`load_value_from_path`]. It reads
+/// a YAML schema file, parses it into a [`Value`], and then deserializes that
+/// value into any type `D` that implements [`DeserializeOwned`].
+///
+/// This function is used as the backbone of all higher-level data-loading
+/// utilities, such as [`load_enum_variants_from_path`], to automatically
+/// populate Rust structs or enums from YAML schema definitions.
+///
+/// # Type Parameters
+/// - `P`: Type of the path (typically [`Path`][std::path::Path]).
+/// - `D`: The target deserializable type implementing [`DeserializeOwned`].
+///
+/// # Errors
+/// - [`Error::DataLoadError`]: if the file cannot be read from disk.
+/// - [`Error::YAMLParseError`]: if the YAML is invalid or cannot be parsed.
+///
+/// Both errors include the full absolute path for debugging.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::data::{get_data_path, load_from_path};
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyConfig {
+///     #[serde(default)]
+///     mime_type: Option<String>,
+/// }
+///
+/// let path = get_data_path("config_nfcv");
+/// let config: MyConfig = load_from_path(path).expect("should load and deserialize config_nfcv");
+///
+/// assert_eq!(config.mime_type, Some("application/vnd.openprinttag".to_string()));
+/// ```
+///
+/// # See also
+/// - [`load_value_from_path`] for loading into untyped [`Value`].
 pub fn load_from_path<P, D>(path: P) -> crate::Result<D>
 where
     P: AsRef<Path>,
     D: DeserializeOwned,
 {
-    serde_norway::from_value(load_value_from_path(path.as_ref())?).map_err(|source| {
-        Error::YAMLParseError { path: path.as_ref().to_path_buf(), source }
-    })
+    serde_norway::from_value(load_value_from_path(path.as_ref())?)
+        .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })
 }
 
 pub fn load<S, D>(name: S) -> crate::Result<D>
