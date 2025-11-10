@@ -2,6 +2,56 @@ use serde::{de, Deserialize, Deserializer};
 use serde_norway::mapping::Entry;
 use serde_norway::Value;
 
+
+/// Recursively rename keys in a [`Value`] according to a provided mapping of
+/// new-from-old (e.g., `<new, old>`) key names.
+///
+/// This function traverses the input [`Value`] tree, including all nested mappings and sequences,
+/// and renames any object keys that match entries in `name_map`. The mapping is applied at every
+/// level, allowing bulk field renaming in complex YAML documents
+/// (such as [OpenPrintTag] schema files).
+///
+/// The function operates **in-place**, modifying the provided `value` directly.
+///
+/// # Type Parameters
+/// - `K`: Type of the *new* key name (typically `str` or [`String`])
+/// - `V`: Type of the *old* key name (typically `str` or [`String`])
+/// - `C`: The name map container, which must implement `IntoIterator<Item = (&K, &V)>`
+///
+/// # Arguments
+/// - `value`: A mutable reference to a [`Value`] structure (mapping, sequence, or scalar).
+/// - `name_map`: A mapping of new-from-old key names to apply recursively.
+///
+/// # Example
+/// ```rust
+/// use std::collections::BTreeMap;
+/// use serde_norway::Value;
+/// use openprinttag_codegen::de::rename_fields;
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyData {
+///     pub real_name: String,
+///     pub real_display_name: String,
+/// }
+///
+/// // load the YAML as a Value
+/// let mut value = serde_norway::from_str::<Value>(r#"
+/// name: GF
+/// display_name: "Glass Fiber"
+/// "#).expect("should load YAML string");
+///
+/// // create a mapping of new-from-old names
+/// let mut name_map = BTreeMap::new();
+/// name_map.insert("real_name", "name");
+/// name_map.insert("real_display_name", "display_name");
+///
+/// // rename the fields and load the value into your struct
+/// rename_fields(&mut value, &name_map);
+/// let data: MyData = serde_norway::from_value(value).expect("should load YAML value");
+///
+/// assert_eq!(data.real_name, "GF");
+/// assert_eq!(data.real_display_name, "Glass Fiber");
+/// ```
 pub fn rename_fields<K, V, C>(value: &mut Value, name_map: &C)
 where
     K: AsRef<str>,
