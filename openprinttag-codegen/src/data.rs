@@ -18,7 +18,7 @@ use std::{
 /// - `data/config_nfcv.yaml`
 ///
 /// # Type Parameters
-/// - `N`: Type of the schema name (typically `str` or [`String`]).
+/// - `S`: Type of the schema name (typically `str` or [`String`]).
 ///
 /// # Arguments
 /// - `name`: Name of the schema to load.
@@ -33,7 +33,7 @@ use std::{
 /// let path = get_data_path("config_nfcv.yaml");
 /// assert!(path.ends_with("data/config_nfcv.yaml"));
 /// ```
-pub fn get_data_path<N: AsRef<str>>(name: N) -> PathBuf {
+pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
     let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
 
     let file_name = name.as_ref();
@@ -87,7 +87,7 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
 /// directory using [`get_data_path`].
 ///
 /// # Type Parameters
-/// - `N`: Type of the schema name (typically `str` or [`String`]).
+/// - `S`: Type of the schema name (typically `str` or [`String`]).
 ///
 /// # Arguments
 /// - `name`: Name of the schema to load.
@@ -113,7 +113,7 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
 /// - [`get_data_path`] for path resolution.
 /// - [`load_value_from_path`] for loading into untyped [`Value`].
 #[inline]
-pub fn load_value<N: AsRef<str>>(name: N) -> crate::Result<Value> {
+pub fn load_value<S: AsRef<str>>(name: S) -> crate::Result<Value> {
     load_value_from_path(get_data_path(name))
 }
 /// Loads and deserializes a schema from a YAML file on disk.
@@ -221,12 +221,12 @@ where
     Err(crate::Error::NoDataPath)
 }
 
-pub fn load_mapped_from_path<P, M, K, V, D>(path: P, name_map: &M) -> crate::Result<D>
+pub fn load_mapped_from_path<P, NM, N, O, D>(path: P, name_map: &NM) -> crate::Result<D>
 where
     P: AsRef<Path>,
-    for<'a> &'a M: IntoIterator<Item = (&'a K, &'a V)>,
-    K: AsRef<str>,
-    V: AsRef<str>,
+    for<'a> &'a NM: IntoIterator<Item = (&'a N, &'a O)>,
+    N: AsRef<str>,
+    O: AsRef<str>,
     D: DeserializeOwned,
 {
     let mut value = load_value_from_path(path.as_ref())?;
@@ -237,12 +237,12 @@ where
     })
 }
 
-pub fn load_mapped<S, M, K, V, D>(name: S, name_map: &M) -> crate::Result<D>
+pub fn load_mapped<S, NM, N, O, D>(name: S, name_map: &NM) -> crate::Result<D>
 where
     S: AsRef<str>,
-    for<'a> &'a M: IntoIterator<Item = (&'a K, &'a V)>,
-    K: AsRef<str>,
-    V: AsRef<str>,
+    for<'a> &'a NM: IntoIterator<Item = (&'a N, &'a O)>,
+    N: AsRef<str>,
+    O: AsRef<str>,
     D: DeserializeOwned,
 {
     load_mapped_from_path(get_data_path(name), name_map)
@@ -275,13 +275,13 @@ where
     }
 }
 
-pub fn load_enum_variants<I, NF, DNF>(
-    name: I,
+pub fn load_enum_variants<S, NF, DNF>(
+    name: S,
     name_field: Option<NF>,
     display_name_field: Option<DNF>,
 ) -> crate::Result<EnumVariants>
 where
-    I: AsRef<str>,
+    S: AsRef<str>,
     NF: AsRef<str>,
     DNF: AsRef<str>,
 {
