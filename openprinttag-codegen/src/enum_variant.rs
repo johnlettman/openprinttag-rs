@@ -13,7 +13,7 @@ pub struct EnumVariant {
     pub name: Option<String>,
 
     #[serde(default)]
-    pub full_name: Option<String>,
+    pub display_name: Option<String>,
 
     #[serde(default)]
     pub deprecated: bool,
@@ -52,8 +52,8 @@ impl EnumVariant {
     pub fn get_doc<EN: AsRef<str>>(&self, name: EN) -> Option<String> {
         let mut doc = String::new();
 
-        if let Some(full_name) = &self.full_name {
-            writeln!(doc, "**{}**", full_name).ok();
+        if let Some(display_name) = &self.display_name {
+            writeln!(doc, "**{}**", display_name).ok();
         }
 
         if let Some(description) = &self.description {
@@ -105,7 +105,7 @@ impl EnumVariant {
 
     #[inline(always)]
     pub fn has_description(&self) -> bool {
-        self.description != None || self.full_name != None
+        self.description != None || self.display_name != None
     }
 
     #[inline(always)]

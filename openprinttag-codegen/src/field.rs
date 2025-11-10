@@ -85,8 +85,9 @@ impl<'de> Deserialize<'de> for Field {
             pub(crate) name_field: Option<String>,
 
             // https://github.com/prusa3d/OpenPrintTag/issues/78
+            // https://github.com/prusa3d/OpenPrintTag/pull/81
             #[serde(default)]
-            pub(crate) full_name_field: Option<String>,
+            pub(crate) display_name_field: Option<String>,
 
             #[serde(default)]
             pub(crate) example: Option<serde_norway::Value>,
@@ -129,8 +130,12 @@ impl<'de> Deserialize<'de> for Field {
                         raw.items_file.ok_or_else(|| D::Error::missing_field("items_file"))?;
 
                     let name = name::to_enum_name(&items_file);
-                    let variants = data::load_enum_variants(items_file, raw.name_field)
-                        .map_err(|e| D::Error::custom(e))?;
+                    let variants = data::load_enum_variants(
+                        items_file,
+                        raw.name_field,
+                        raw.display_name_field,
+                    )
+                    .map_err(|e| D::Error::custom(e))?;
 
                     FieldType::Enum { name, description: description.clone(), variants }
                 },
@@ -139,8 +144,12 @@ impl<'de> Deserialize<'de> for Field {
                         raw.items_file.ok_or_else(|| D::Error::missing_field("items_file"))?;
 
                     let name = name::to_enum_name(&items_file);
-                    let variants = data::load_enum_variants(items_file, raw.name_field)
-                        .map_err(|e| D::Error::custom(e))?;
+                    let variants = data::load_enum_variants(
+                        items_file,
+                        raw.name_field,
+                        raw.display_name_field,
+                    )
+                    .map_err(|e| D::Error::custom(e))?;
 
                     FieldType::EnumArray { name, description: description.clone(), variants }
                 },

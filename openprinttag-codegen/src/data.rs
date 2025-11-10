@@ -88,32 +88,42 @@ where
     load_mapped_from_path(get_data_path(name), name_map)
 }
 
-pub fn load_enum_variants_from_path<P, N>(
+pub fn load_enum_variants_from_path<P, NF, DNF>(
     path: P,
-    name_field: Option<N>,
+    name_field: Option<NF>,
+    display_name_field: Option<DNF>,
 ) -> crate::Result<EnumVariants>
 where
     P: AsRef<Path>,
-    N: AsRef<str>,
+    NF: AsRef<str>,
+    DNF: AsRef<str>,
 {
+    let mut name_map = BTreeMap::new();
+
     if let Some(name_field) = name_field {
-        let mut name_map = BTreeMap::new();
-        name_map.insert("name", name_field.as_ref());
+        name_map.insert("name", name_field.as_ref().to_string());
+    }
 
-        // infer full name field
-        // https://github.com/prusa3d/OpenPrintTag/issues/78
-        name_map.insert("full_name", "name");
+    if let Some(display_name_field) = display_name_field {
+        name_map.insert("display_name", display_name_field.as_ref().to_string());
+    }
 
-        load_mapped_from_path(path, &name_map)
-    } else {
+    if name_map.is_empty() {
         load_from_path(path)
+    } else {
+        load_mapped_from_path(path, &name_map)
     }
 }
 
-pub fn load_enum_variants<I, N>(name: I, name_field: Option<N>) -> crate::Result<EnumVariants>
+pub fn load_enum_variants<I, NF, DNF>(
+    name: I,
+    name_field: Option<NF>,
+    display_name_field: Option<DNF>,
+) -> crate::Result<EnumVariants>
 where
     I: AsRef<str>,
-    N: AsRef<str>,
+    NF: AsRef<str>,
+    DNF: AsRef<str>,
 {
-    load_enum_variants_from_path(get_data_path(name), name_field)
+    load_enum_variants_from_path(get_data_path(name), name_field, display_name_field)
 }
