@@ -31,10 +31,10 @@ pub type NameMap = BTreeMap<String, String>;
 /// The function operates **in-place**, modifying the provided `value` directly.
 ///
 /// # Type Parameters
-/// - `K`: Type of the *new* key name (typically `str` or [`String`])
-/// - `V`: Type of the *old* key name (typically `str` or [`String`])
-/// - `C`: The name map container, which must implement `IntoIterator<Item =
-///   (&K, &V)>`
+/// - `N`: Type of the *new* key name (typically `str` or [`String`]).
+/// - `O`: Type of the *old* key name (typically `str` or [`String`]).
+/// - `NM`: The name map container, which must implement
+///     `IntoIterator<Item = (&N, &O)>`.
 ///
 /// # Arguments
 /// - `value`: A mutable reference to a [`Value`] structure (mapping, sequence,
@@ -74,11 +74,11 @@ pub type NameMap = BTreeMap<String, String>;
 /// assert_eq!(data.real_name, "GF");
 /// assert_eq!(data.real_display_name, "Glass Fiber");
 /// ```
-pub fn rename_fields<K, V, C>(value: &mut Value, name_map: &C)
+pub fn rename_fields<N, O, NM>(value: &mut Value, name_map: &NM)
 where
-    K: AsRef<str>,
-    V: AsRef<str>,
-    for<'a> &'a C: IntoIterator<Item = (&'a K, &'a V)>,
+    N: AsRef<str>,
+    O: AsRef<str>,
+    for<'a> &'a NM: IntoIterator<Item = (&'a N, &'a O)>,
 {
     match value {
         Value::Mapping(map) => {

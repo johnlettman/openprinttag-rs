@@ -6,8 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Constructs an absolute path to a data file located under the crate’s `data/`
-/// directory.
+/// Constructs an absolute path to a schema file located under the crate’s `data` directory.
 ///
 /// The function resolves paths relative to the crate root using
 /// `CARGO_MANIFEST_DIR` environment variable at compile time and automatically
@@ -16,6 +15,12 @@ use std::{
 /// This is used for resolving schema or enum data files, such as
 /// - `data/material_type_enum.yaml`
 /// - `data/config_nfcv.yaml`
+///
+/// # Type Parameters
+/// - `N`: Type of the schema name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Name of the schema to load.
 ///
 /// # Examples
 /// ```rust
@@ -27,7 +32,7 @@ use std::{
 /// let path = get_data_path("config_nfcv.yaml");
 /// assert!(path.ends_with("data/config_nfcv.yaml"));
 /// ```
-pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
+pub fn get_data_path<N: AsRef<str>>(name: N) -> PathBuf {
     let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
 
     let file_name = name.as_ref();
@@ -37,12 +42,18 @@ pub fn get_data_path<S: AsRef<str>>(name: S) -> PathBuf {
     crate_dir.join("data").join(file_name)
 }
 
-/// Loads and parses a YAML file from the disk into a generic [`Value`].
+/// Loads and parses a YAML schema file from the disk into a generic [`Value`].
 ///
 /// This function reads the file at the specified path, converts it to a UTF-8
 /// string, and then deserializes it into a dynamically typed [`Value`]. It
 /// forms the low-level foundation for higher-level loaders such as
 /// [`load_mapped_from_path`] or [`load_enum_variants_from_path`].
+///
+/// # Type Parameters
+/// - `P`: Type of the path (typically [`Path`][std::path::Path]).
+///
+/// # Arguments
+/// - `path`: Path to the schema.
 ///
 /// # Errors
 /// - [`Error::DataLoadError`]: if the file cannot be read from disk.
@@ -67,12 +78,18 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
         .map_err(|source| Error::YAMLParseError { path: path.as_ref().to_path_buf(), source })?)
 }
 
-/// Loads and parses a YAML data file from the crate’s built-in `data` directory
+/// Loads and parses a YAML schema file from the crate’s built-in `data` directory
 /// into a generic [`Value`].
 ///
 /// This is a convenience wrapper around [`load_value_from_path`], which
 /// automatically resolves the file path relative to the crate’s `data`
 /// directory using [`get_data_path`].
+///
+/// # Type Parameters
+/// - `N`: Type of the schema name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Name of the schema to load.
 ///
 /// # Errors
 /// Propagates the same errors as [`load_value_from_path`]:
@@ -95,7 +112,7 @@ pub fn load_value_from_path<P: AsRef<Path>>(path: P) -> crate::Result<Value> {
 /// - [`get_data_path`] for path resolution
 /// - [`load_value_from_path`] for loading from arbitrary locations
 #[inline]
-pub fn load_value<S: AsRef<str>>(name: S) -> crate::Result<Value> {
+pub fn load_value<N: AsRef<str>>(name: N) -> crate::Result<Value> {
     load_value_from_path(get_data_path(name))
 }
 
@@ -105,7 +122,7 @@ where
     D: DeserializeOwned,
 {
     serde_norway::from_value(load_value_from_path(path.as_ref())?).map_err(|source| {
-        crate::Error::YAMLParseError { path: path.as_ref().to_path_buf(), source }
+        Error::YAMLParseError { path: path.as_ref().to_path_buf(), source }
     })
 }
 
