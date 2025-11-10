@@ -1,5 +1,21 @@
 use serde::{Serialize, Serializer};
 
+/// Custom serializer for optional multi-line description text matching the conventions of
+/// [OpenPrintTag].
+///
+/// This function is designed to convert an [`Option`] [`String`] description field into either a
+/// single string or a YAML list of strings, depending on its contents:
+/// - If the value is [`None`], it serializes as `null`.
+/// - If the value is a single paragraph (no double newlines or line breaks), it serializes as a
+///     plain string.
+/// * If the value contains multiple paragraphs or line breaks, it splits them and serializes as a
+///     sequence of strings.
+///
+/// Consecutive blank lines are treated as paragraph separators (`"\n\n"`), while single newlines
+/// are treated as intra-paragraph line breaks. Leading and trailing whitespace are trimmed from
+/// each line.
+///
+/// [OpenPrintTag]: https://openprinttag.org/
 pub fn description<S>(value: &Option<String>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
