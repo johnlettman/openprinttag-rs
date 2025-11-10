@@ -8,18 +8,20 @@ pub struct Config {
 
     pub root: Option<String>,
 
-    /// The meta section allows defining of region offsets (within the `NDEF` payload) and sizes.
+    /// The meta section allows defining of region offsets (within the `NDEF`
+    /// payload) and sizes.
     ///
     /// See: https://specs.openprinttag.org/#/nfc_data_format?id=_4-meta-section
     pub meta_fields: Fields,
 
-    /// The main section contains material information that does not change during the package
-    /// instance lifetime.
+    /// The main section contains material information that does not change
+    /// during the package instance lifetime.
     ///
     /// See: https://specs.openprinttag.org/#/nfc_data_format?id=_5-main-section
     pub main_fields: Fields,
 
-    /// The auxiliary section is intended for dynamic data - typically usage tracking.
+    /// The auxiliary section is intended for dynamic data - typically usage
+    /// tracking.
     ///
     /// See: https://specs.openprinttag.org/#/nfc_data_format?id=_6-auxiliary-section
     pub aux_fields: Fields,

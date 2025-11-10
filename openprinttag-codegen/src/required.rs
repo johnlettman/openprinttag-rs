@@ -9,7 +9,7 @@ pub enum Required {
     No,
 
     #[strum(ascii_case_insensitive, to_string = "recommended")]
-    Recommended
+    Recommended,
 }
 
 impl Default for Required {
@@ -39,7 +39,9 @@ impl<'de> Deserialize<'de> for Required {
             type Value = Required;
 
             fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                f.write_str("a boolean or one of the strings \"true\", \"false\", or \"recommended\"")
+                f.write_str(
+                    "a boolean or one of the strings \"true\", \"false\", or \"recommended\"",
+                )
             }
 
             fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E> {

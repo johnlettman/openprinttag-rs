@@ -14,7 +14,6 @@ fn test_to_enum_variant() {
         TestCase { name: "radiation_shielding", want: "RadiationShielding" },
         TestCase { name: "contains_organic_material", want: "ContainsOrganicMaterial" },
         TestCase { name: "contains_glass_fiber", want: "ContainsGlassFiber" },
-
         // special caps cases
         TestCase { name: "esd_safe", want: "ESDSafe" },
         TestCase { name: "contains_ptfe", want: "ContainsPTFE" },

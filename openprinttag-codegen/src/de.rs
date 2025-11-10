@@ -1,32 +1,32 @@
 use serde::{de, Deserialize, Deserializer};
-use serde_norway::mapping::Entry;
-use serde_norway::Value;
-
+use serde_norway::{mapping::Entry, Value};
 
 /// Recursively rename keys in a [`Value`] according to a provided mapping of
 /// new-from-old (e.g., `<new, old>`) key names.
 ///
-/// This function traverses the input [`Value`] tree, including all nested mappings and sequences,
-/// and renames any object keys that match entries in `name_map`. The mapping is applied at every
-/// level, allowing bulk field renaming in complex YAML documents
-/// (such as [OpenPrintTag] schema files).
+/// This function traverses the input [`Value`] tree, including all nested
+/// mappings and sequences, and renames any object keys that match entries in
+/// `name_map`. The mapping is applied at every level, allowing bulk field
+/// renaming in complex YAML documents (such as [OpenPrintTag] schema files).
 ///
 /// The function operates **in-place**, modifying the provided `value` directly.
 ///
 /// # Type Parameters
 /// - `K`: Type of the *new* key name (typically `str` or [`String`])
 /// - `V`: Type of the *old* key name (typically `str` or [`String`])
-/// - `C`: The name map container, which must implement `IntoIterator<Item = (&K, &V)>`
+/// - `C`: The name map container, which must implement `IntoIterator<Item =
+///   (&K, &V)>`
 ///
 /// # Arguments
-/// - `value`: A mutable reference to a [`Value`] structure (mapping, sequence, or scalar).
+/// - `value`: A mutable reference to a [`Value`] structure (mapping, sequence,
+///   or scalar).
 /// - `name_map`: A mapping of new-from-old key names to apply recursively.
 ///
 /// # Example
 /// ```rust
-/// use std::collections::BTreeMap;
-/// use serde_norway::Value;
 /// use openprinttag_codegen::de::rename_fields;
+/// use serde_norway::Value;
+/// use std::collections::BTreeMap;
 ///
 /// #[derive(Debug, Clone, serde::Deserialize)]
 /// struct MyData {
@@ -35,10 +35,13 @@ use serde_norway::Value;
 /// }
 ///
 /// // load the YAML as a Value
-/// let mut value = serde_norway::from_str::<Value>(r#"
+/// let mut value = serde_norway::from_str::<Value>(
+///     r#"
 /// name: GF
 /// display_name: "Glass Fiber"
-/// "#).expect("should load YAML string");
+/// "#,
+/// )
+/// .expect("should load YAML string");
 ///
 /// // create a mapping of new-from-old names
 /// let mut name_map = BTreeMap::new();
@@ -108,6 +111,65 @@ where
     }
 }
 
+/// Custom deserializer for optional multi-line description text matching the
+/// conventions of [OpenPrintTag].
+///
+/// This function is designed to parse description fields that may be
+/// represented in several forms:
+/// - As a plain string (`"Contains glass"`).
+/// - As a sequence of strings (`["Contains glass fibers.", "Strong and
+///   rigid."]`).
+/// - As `null` or missing.
+///
+/// It deserializer normalizes these inputs into a single [`Option`] [`String`]
+/// value:
+/// - `null` or a missing field: [`None`].
+/// - A single string: [`Some`] [`String`].
+/// - A list of strings: [`Some`] [`String`] with the list joined using
+///   paragraph and line break conventions matching Rust documentation strings.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::de::description;
+///
+/// #[derive(Debug, Clone, serde::Deserialize)]
+/// struct MyData {
+///     #[serde(default, deserialize_with = "description")]
+///     description: Option<String>,
+/// }
+///
+/// // single-line
+/// let single: MyData = serde_norway::from_str(r#"description: "Contains glass""#)
+///     .expect("should load YAML string");
+/// assert_eq!(single.description, Some("Contains glass".into()));
+///
+/// // multi-line
+/// let multi: MyData = serde_norway::from_str(
+///     r#"
+/// description:
+///   - "Contains glass fibers."
+///   - "Strong and rigid."
+/// "#,
+/// )
+/// .expect("should load YAML string");
+/// assert_eq!(multi.description, Some("Contains glass fibers.\n\nStrong and rigid.".into()));
+///
+/// // null field
+/// let missing: MyData =
+///     serde_norway::from_str(r#"description: null"#).expect("should load YAML string");
+/// assert_eq!(missing.description, None);
+///
+/// // empty
+/// let empty: MyData =
+///     serde_norway::from_str(r#"description: "       ""#).expect("should load YAML string");
+/// assert_eq!(empty.description, None);
+/// ```
+///
+/// # See also
+/// - [`ser::description`][crate::ser::description] for the inverse
+///   serialization logic.
+///
+/// [OpenPrintTag]: https://openprinttag.org/
 pub fn description<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where
     D: Deserializer<'de>,
@@ -125,7 +187,8 @@ where
         where
             E: de::Error,
         {
-            Ok(Some(value.trim().to_string()))
+            let value = value.trim();
+            Ok((!value.is_empty()).then_some(value.to_string()))
         }
 
         fn visit_none<E>(self) -> Result<Self::Value, E>

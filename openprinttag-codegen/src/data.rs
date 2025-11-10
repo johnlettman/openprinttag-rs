@@ -1,8 +1,10 @@
 use crate::{de, EnumVariants};
 use serde::de::DeserializeOwned;
-use std::collections::BTreeMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub type NameMap = BTreeMap<String, String>;
 
