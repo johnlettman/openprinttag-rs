@@ -69,22 +69,61 @@ pub fn to_enum_name<S: AsRef<str>>(name: S) -> String {
     to_camel(name)
 }
 
+/// Builds a fully qualified Rust enum variant reference (e.g.,
+/// `"MaterialType::PC"`).
+///
+/// The enum name is normalized with [`to_enum_name`], and the enum variant name
+/// is normalized with [`to_camel`].
+///
+/// # Type Parameters
+/// - `EN`: Type of the enum name (typically `str` or [`String`]).
+/// - `EV`: Type of the enum variant name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Enum name.
+/// - `variant`: Enum variant name.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::name;
+///
+/// assert_eq!(name::to_enum_reference("material_type", "pc"), "MaterialType::PC");
+/// ```
+#[inline]
 pub fn to_enum_reference<EN: AsRef<str>, EV: AsRef<str>>(name: EN, variant: EV) -> String {
-    format!("{}::{}", to_camel(name), to_camel(variant))
+    format!("{}::{}", to_enum_name(name), to_camel(variant))
 }
 
-pub fn to_enum_references<EN: AsRef<str>, EV: AsRef<str>>(
-    name: EN,
-    variants: &Vec<EV>,
-) -> Option<String> {
-    (!variants.is_empty()).then_some(
-        variants.iter().map(|variant| to_enum_reference(name.as_ref(), variant)).collect(),
-    )
-}
-
+/// Builds a Markdown-formatted reference link to a Rust enum variant.
+///
+/// Produces output like:
+/// ```md
+/// [`PC`][MaterialType::PC]
+/// ```
+///
+/// # Type Parameters
+/// - `EN`: Type of the enum name (typically `str` or [`String`]).
+/// - `EV`: Type of the enum variant name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Enum name.
+/// - `variant`: Enum variant name.
+///
+/// This helper is typically used in generated documentation.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::name;
+///
+/// assert_eq!(name::to_enum_reference_md("material_type", "pc"), "[`PC`][MaterialType::PC]");
+/// ```
+///
+/// # See also
+/// - [`to_enum_reference`] for the plain Rust reference.
+/// - [`to_enum_references_md`] for linking multiple variants.
+#[inline]
 pub fn to_enum_reference_md<EN: AsRef<str>, EV: AsRef<str>>(name: EN, variant: EV) -> String {
-    let name = to_camel(name);
-    format!("[`{}`][{}::{}]", name, name, to_camel(variant))
+    format!("[`{}`][{}]", to_camel(variant.as_ref()), to_enum_reference(name, variant))
 }
 
 pub fn to_enum_references_md<EN: AsRef<str>, EV: AsRef<str>>(
