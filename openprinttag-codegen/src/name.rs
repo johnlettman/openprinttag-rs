@@ -45,6 +45,23 @@ pub fn to_camel<S: AsRef<str>>(name: S) -> String {
         .collect()
 }
 
+/// Converts a YAML schema enum filename (e.g., `"material_type_enum.yaml"`)
+/// into a Rust-style enum type name (e.g., `"MaterialType"`).
+///
+/// This strips `.yaml` and `_enum` suffixes before applying [`to_camel`].
+///
+/// # Type Parameters
+/// - `S`: Type of the name (typically `str` or [`String`]).
+///
+/// # Arguments
+/// - `name`: Name to convert.
+///
+/// # Example
+/// ```rust
+/// use openprinttag_codegen::name;
+///
+/// assert_eq!(name::to_enum_name("material_type_enum.yaml"), "MaterialType");
+/// ```
 pub fn to_enum_name<S: AsRef<str>>(name: S) -> String {
     let name = name.as_ref();
     let name = name.strip_suffix(".yaml").unwrap_or(name);
