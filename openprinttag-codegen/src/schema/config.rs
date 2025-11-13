@@ -182,6 +182,7 @@ impl AsItems for ConfigStructSchema {
 
         let mut items = vec![config_item];
         items.extend(builtin::EnumArray.as_items());
+        items.extend(builtin::Error.as_items());
         items.extend(self.context.values().flat_map(|s| s.as_items()));
 
         items

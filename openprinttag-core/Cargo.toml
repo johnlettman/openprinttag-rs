@@ -8,7 +8,7 @@ edition.workspace = true
 default = ["std"]
 all = ["std"]
 
-std = []
+std = ["thiserror/std"]
 
 [dependencies.uuid]
 version = "1.18"
@@ -16,6 +16,14 @@ features = ["v5"]
 
 [dependencies.chrono]
 version = "0.4"
+
+[dependencies.minicbor]
+version = "2.1"
+default-features = false
+
+[dependencies.thiserror]
+version = "2.0"
+default-features = false
 
 [build-dependencies]
 openprinttag-codegen = { path = "../openprinttag-codegen" }

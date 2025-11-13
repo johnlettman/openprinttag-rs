@@ -10,125 +10,32 @@ pub type EnumArray<T, const N: usize> = std::vec::Vec<T>;
 #[cfg(not(feature = "std"))]
 #[doc = "An array of enum values.\n"]
 pub type EnumArray<T, const N: usize> = heapless::Vec<T, N>;
-#[doc = "Offsets and sizes within the `NDEF` payload."]
-pub struct Meta {
-    #[doc = "Offset of the main region, relative to the NDEF payload start.\n\nIf not specified, the main region immediately follows the meta section."]
-    pub main_region_offset: u32,
-    #[doc = "Allocation size of the main region.\n\nIf not specified, the region spans till the next region or payload end."]
-    pub main_region_size: u32,
-    #[doc = "Offset of the auxiliary region, relative to the NDEF payload start.\n\nOmitting this field means that the auxiliary region is not present."]
-    pub aux_region_offset: u32,
-    #[doc = "Allocation size of the auxiliary region.\n\nIf not specified, the region (if present) spans till the next region or payload end."]
-    pub aux_region_size: u32,
+#[derive(Debug, thiserror :: Error)]
+pub enum Error {
+    #[error("unexpected type")]
+    UnexpectedType,
+    #[error("invalid enum discriminant: {0}")]
+    InvalidEnumDiscriminant(u32),
+    #[error("too many items in the array")]
+    TooManyItems,
+    #[error("missing field: {0}")]
+    MissingField(&'static str),
+    #[error("CBOR decode error")]
+    DecodeError(minicbor::decode::Error),
+}
+impl From<minicbor::decode::Error> for Error {
+    #[inline(always)]
+    fn from(e: minicbor::decode::Error) -> Self {
+        Self::DecodeError(e)
+    }
 }
 #[repr(u32)]
 #[doc = "Contains material information that does not change during the package instance lifetime."]
-pub enum WriteProtection {
-    #[doc = "The tag is not write protected."]
-    No = 0u32,
-    #[doc = "The tag is irreversibly protected against writing."]
-    Irreversible = 1u32,
-    #[doc = "The tag is write-protected using the `PROTECT PAGE` command (SLIX2-specific) and is unlockable with a password that is located somewhere on the container."]
-    ProtectPageUnlockable = 2u32,
-}
-#[doc = "Contains material information that does not change during the package instance lifetime."]
-pub struct Main {
-    #[doc = "Unique identifier of the package instance.\n\nIf not specified, can be deduced from `brand_uuid` + NFC tag UID. See UUID section for more details."]
-    pub instance_uuid: uuid::Uuid,
-    #[doc = "Universally unique identifier of the package (product)\n\nIf not specified, can be deduced from `brand_uuid` + `gtin`. See UUID section for more details."]
-    pub package_uuid: uuid::Uuid,
-    #[doc = "Universally unique identifier of the material\n\nIf not specified, can be deduced from `brand_uuid` + `material_name`. See UUID section for more details."]
-    pub material_uuid: uuid::Uuid,
-    #[doc = "Universally unique identifier of the brand\n\nIf not specified, can be deduced from the `brand_name` string. See UUID section for more details."]
-    pub brand_uuid: uuid::Uuid,
-    #[doc = "Global Trade Item Number"]
-    pub gtin: f32,
-    #[doc = "Brand-specific identifier of the package instance.\n\nNot much use cases at this moment, possibly just for URL deduction"]
-    pub brand_specific_instance_id: String,
-    #[doc = "Brand-specific identifier of the package (product ID)\n\nNot much use cases at this moment, possibly just for URL deduction"]
-    pub brand_specific_package_id: String,
-    #[doc = "Together with brand uniquely identifies each material\n\nNot much use cases at this moment, possibly just for URL deduction"]
-    pub brand_specific_material_id: String,
-    #[doc = "Brand-specific material display string/identifier.\n\nIn the UI, brand_name + material_name should be displayed together, for example \"Prusament PLA Galaxy Black\""]
-    pub material_name: String,
-    #[doc = "Abbreviation of the material name, for UI purposes (footers, dashboards, ...)\n\nIf not present, the material inherits the abbreviation from the material type."]
-    pub material_abbreviation: String,
-    #[doc = "Brand of the material"]
-    pub brand_name: String,
-    pub manufactured_date: chrono::DateTime<chrono::Utc>,
-    #[doc = "Country the [MaterialPackageInstance](terminology) was produced in, encoded as a two-letter code according to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)"]
-    pub country_of_origin: String,
-    pub expiration_date: chrono::DateTime<chrono::Utc>,
-    #[doc = "Nominal/advertised weight of the full package of the material, excluding the container\n\nThe actual netto weight of a spcific package instance can slightly differ and is specified by `actual_netto_full_weight`"]
-    pub nominal_netto_full_weight: f32,
-    #[doc = "Actual weight of the full package of the material of this specific package instance, excluding the weight of the container.\n\nCan slightly differ from `nominal_netto_full_weight`.\nIf not present, it is assumed to match `nominal_netto_full_weight`."]
-    pub actual_netto_full_weight: f32,
-    #[doc = "Nominal/advertised filament length of the full spool.\n\nThe actual length of a specific package instance can slightly differ and is specified by `actual_full_length`"]
-    pub nominal_full_length: f32,
-    #[doc = "Actual filament length of the full spool.\n\nCan slightly differ from `netto_full_length`"]
-    pub actual_full_length: f32,
-    #[doc = "Weight of the empty container"]
-    pub empty_container_weight: f32,
-    #[doc = "Primary color of the material in the RGB(A) format, intended for UI purposes.\n\nThe alpha channel can be left out, in which case the data should have 3 bytes instead of 4 and the color will be considered fully opaque.\nIf a material doesn't have a single primary color (for example rainbow or coextruded filaments), this field can be null."]
-    pub primary_color: [u8; 4],
-    #[doc = "One of secondary colors of the material.\n\nData format is the same as for `primary_color`"]
-    pub secondary_color_0: [u8; 4],
-    #[doc = "See `secondary_color_0`"]
-    pub secondary_color_1: [u8; 4],
-    #[doc = "See `secondary_color_0`"]
-    pub secondary_color_2: [u8; 4],
-    #[doc = "See `secondary_color_0`"]
-    pub secondary_color_3: [u8; 4],
-    #[doc = "See `secondary_color_0`"]
-    pub secondary_color_4: [u8; 4],
-    #[doc = "Transmission Distance is a number representing material opacity. Value ranges from 0.1 (least transparent/most opaque) to 100 (most transparent/least opaque)\n\nSee [Prusa TD values](https://help.prusa3d.com/article/hueforge-filament-transparency-values-and-hexcodes_762314) or [HueForge website](https://shop.thehueforge.com/blogs/news/what-is-hueforge)."]
-    pub transmission_distance: f32,
-    #[doc = "Density of the material"]
-    pub density: f32,
-    #[doc = "Diameter of the filament, in mm.\n\nIf not present, 1.75 mm is assumed."]
-    pub filament_diameter: f32,
-    #[doc = "Hardness of the material on the Shore A hardness scale (suitable for softer materials)\n\nNote: There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."]
-    pub shore_hardness_a: u32,
-    #[doc = "Hardness of the material on the Shore D hardness scale (suitable for harder materials)\n\nNote: There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."]
-    pub shore_hardness_d: u32,
-    #[doc = "Filaments can contain particles that would clog smaller nozzles.\n\nThis field specifies minimum nozzle diameter recommended for printing this material."]
-    pub min_nozzle_diameter: f32,
-    #[doc = "Minimum recommended nozzle tempeature for printing.\n\nAlso used for loading the filament to the nozzle."]
-    pub min_print_temperature: u32,
-    #[doc = "Maximum recommended nozzle tempeature for printing.\n\nAlso used for loading the filament to the nozzle."]
-    pub max_print_temperature: u32,
-    #[doc = "Recommended nozzle tempeature for preheating/loadcell bed leveling.\n\nShould be large enough for the material to get soft, but not low enough for it no to drip out of the nozzle."]
-    pub preheat_temperature: u32,
-    #[doc = "Minimum recommended heatbed tempeature."]
-    pub min_bed_temperature: u32,
-    #[doc = "Maximum recommended heatbed tempeature."]
-    pub max_bed_temperature: u32,
-    #[doc = "Minimum recommended temperature of the chamber."]
-    pub min_chamber_temperature: u32,
-    #[doc = "Maximum recommended temperature of the chamber."]
-    pub max_chamber_temperature: u32,
-    #[doc = "Ideal chamber temperature for printing."]
-    pub chamber_temperature: u32,
-    #[doc = "Width of the filament spool. Can be useful to know for spool holders, dryboxes and such."]
-    pub container_width: u32,
-    #[doc = "Diameter of the spool. Can be useful to know for spool holders, dryboxes and such."]
-    pub container_outer_diameter: u32,
-    #[doc = "Diameter of the inner cylinder the filament is spooled once.\n\nEquals to the minimum diameter of the filament winding."]
-    pub container_inner_diameter: u32,
-    #[doc = "Diameter of the center hole of the spool."]
-    pub container_hole_diameter: u32,
-    #[doc = "Viscosity of the material at 18 °C"]
-    pub viscosity_18c: f32,
-    #[doc = "Viscosity of the material at 25 °C"]
-    pub viscosity_25c: f32,
-    #[doc = "Viscosity of the material at 40 °C"]
-    pub viscosity_40c: f32,
-    #[doc = "Viscosity of the material at 60 °C"]
-    pub viscosity_60c: f32,
-    #[doc = "Maximum amount of material the container can hold."]
-    pub container_volumetric_capacity: f32,
-    #[doc = "Wavelength of the light the material has been designed to be cured with"]
-    pub cure_wavelength: u32,
+pub enum MaterialClass {
+    #[doc = "**Filament**\nFilament"]
+    FFF = 0u32,
+    #[doc = "**Resin**\nResin"]
+    SLA = 1u32,
 }
 #[repr(u32)]
 #[doc = "Contains material information that does not change during the package instance lifetime."]
@@ -274,24 +181,114 @@ pub enum Tags {
     #[doc = "**Limited edition**\nThe material is a limited edition run"]
     LimitedEdition = 69u32,
 }
-#[doc = "Dynamic data, typically usage tracking."]
-pub struct Aux {
-    #[doc = "Amount of material that was used up from the container\n\n`remaining_weight` = `instance_netto_full_weight` - `consumed_weight`"]
-    pub consumed_weight: f32,
-    #[doc = "Workgroup identifier, used for detecting first usage of the material. See the \"write protection\" section."]
-    pub workgroup: String,
-    #[doc = "Determines semantics of the fields in the general purpose key range.\n\nMUST be filled if any of the general purpose keys is used.\nSee \"Vendor-specific fields\""]
-    pub general_purpose_range_user: String,
-    #[doc = "Timestamp when the resin was last stirred.\n\nResins that have not been used for some time should be stirred before printing."]
-    pub last_stir_time: chrono::DateTime<chrono::Utc>,
-}
 #[repr(u32)]
 #[doc = "Contains material information that does not change during the package instance lifetime."]
-pub enum MaterialClass {
-    #[doc = "**Filament**\nFilament"]
-    FFF = 0u32,
-    #[doc = "**Resin**\nResin"]
-    SLA = 1u32,
+pub enum WriteProtection {
+    #[doc = "The tag is not write protected."]
+    No = 0u32,
+    #[doc = "The tag is irreversibly protected against writing."]
+    Irreversible = 1u32,
+    #[doc = "The tag is write-protected using the `PROTECT PAGE` command (SLIX2-specific) and is unlockable with a password that is located somewhere on the container."]
+    ProtectPageUnlockable = 2u32,
+}
+#[doc = "Contains material information that does not change during the package instance lifetime."]
+pub struct Main {
+    #[doc = "Unique identifier of the package instance.\n\nIf not specified, can be deduced from `brand_uuid` + NFC tag UID. See UUID section for more details."]
+    pub instance_uuid: uuid::Uuid,
+    #[doc = "Universally unique identifier of the package (product)\n\nIf not specified, can be deduced from `brand_uuid` + `gtin`. See UUID section for more details."]
+    pub package_uuid: uuid::Uuid,
+    #[doc = "Universally unique identifier of the material\n\nIf not specified, can be deduced from `brand_uuid` + `material_name`. See UUID section for more details."]
+    pub material_uuid: uuid::Uuid,
+    #[doc = "Universally unique identifier of the brand\n\nIf not specified, can be deduced from the `brand_name` string. See UUID section for more details."]
+    pub brand_uuid: uuid::Uuid,
+    #[doc = "Global Trade Item Number"]
+    pub gtin: f32,
+    #[doc = "Brand-specific identifier of the package instance.\n\nNot much use cases at this moment, possibly just for URL deduction"]
+    pub brand_specific_instance_id: String,
+    #[doc = "Brand-specific identifier of the package (product ID)\n\nNot much use cases at this moment, possibly just for URL deduction"]
+    pub brand_specific_package_id: String,
+    #[doc = "Together with brand uniquely identifies each material\n\nNot much use cases at this moment, possibly just for URL deduction"]
+    pub brand_specific_material_id: String,
+    #[doc = "Brand-specific material display string/identifier.\n\nIn the UI, brand_name + material_name should be displayed together, for example \"Prusament PLA Galaxy Black\""]
+    pub material_name: String,
+    #[doc = "Abbreviation of the material name, for UI purposes (footers, dashboards, ...)\n\nIf not present, the material inherits the abbreviation from the material type."]
+    pub material_abbreviation: String,
+    #[doc = "Brand of the material"]
+    pub brand_name: String,
+    pub manufactured_date: chrono::DateTime<chrono::Utc>,
+    #[doc = "Country the [MaterialPackageInstance](terminology) was produced in, encoded as a two-letter code according to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)"]
+    pub country_of_origin: String,
+    pub expiration_date: chrono::DateTime<chrono::Utc>,
+    #[doc = "Nominal/advertised weight of the full package of the material, excluding the container\n\nThe actual netto weight of a spcific package instance can slightly differ and is specified by `actual_netto_full_weight`"]
+    pub nominal_netto_full_weight: f32,
+    #[doc = "Actual weight of the full package of the material of this specific package instance, excluding the weight of the container.\n\nCan slightly differ from `nominal_netto_full_weight`.\nIf not present, it is assumed to match `nominal_netto_full_weight`."]
+    pub actual_netto_full_weight: f32,
+    #[doc = "Nominal/advertised filament length of the full spool.\n\nThe actual length of a specific package instance can slightly differ and is specified by `actual_full_length`"]
+    pub nominal_full_length: f32,
+    #[doc = "Actual filament length of the full spool.\n\nCan slightly differ from `netto_full_length`"]
+    pub actual_full_length: f32,
+    #[doc = "Weight of the empty container"]
+    pub empty_container_weight: f32,
+    #[doc = "Primary color of the material in the RGB(A) format, intended for UI purposes.\n\nThe alpha channel can be left out, in which case the data should have 3 bytes instead of 4 and the color will be considered fully opaque.\nIf a material doesn't have a single primary color (for example rainbow or coextruded filaments), this field can be null."]
+    pub primary_color: [u8; 4],
+    #[doc = "One of secondary colors of the material.\n\nData format is the same as for `primary_color`"]
+    pub secondary_color_0: [u8; 4],
+    #[doc = "See `secondary_color_0`"]
+    pub secondary_color_1: [u8; 4],
+    #[doc = "See `secondary_color_0`"]
+    pub secondary_color_2: [u8; 4],
+    #[doc = "See `secondary_color_0`"]
+    pub secondary_color_3: [u8; 4],
+    #[doc = "See `secondary_color_0`"]
+    pub secondary_color_4: [u8; 4],
+    #[doc = "Transmission Distance is a number representing material opacity. Value ranges from 0.1 (least transparent/most opaque) to 100 (most transparent/least opaque)\n\nSee [Prusa TD values](https://help.prusa3d.com/article/hueforge-filament-transparency-values-and-hexcodes_762314) or [HueForge website](https://shop.thehueforge.com/blogs/news/what-is-hueforge)."]
+    pub transmission_distance: f32,
+    #[doc = "Density of the material"]
+    pub density: f32,
+    #[doc = "Diameter of the filament, in mm.\n\nIf not present, 1.75 mm is assumed."]
+    pub filament_diameter: f32,
+    #[doc = "Hardness of the material on the Shore A hardness scale (suitable for softer materials)\n\nNote: There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."]
+    pub shore_hardness_a: u32,
+    #[doc = "Hardness of the material on the Shore D hardness scale (suitable for harder materials)\n\nNote: There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."]
+    pub shore_hardness_d: u32,
+    #[doc = "Filaments can contain particles that would clog smaller nozzles.\n\nThis field specifies minimum nozzle diameter recommended for printing this material."]
+    pub min_nozzle_diameter: f32,
+    #[doc = "Minimum recommended nozzle tempeature for printing.\n\nAlso used for loading the filament to the nozzle."]
+    pub min_print_temperature: u32,
+    #[doc = "Maximum recommended nozzle tempeature for printing.\n\nAlso used for loading the filament to the nozzle."]
+    pub max_print_temperature: u32,
+    #[doc = "Recommended nozzle tempeature for preheating/loadcell bed leveling.\n\nShould be large enough for the material to get soft, but not low enough for it no to drip out of the nozzle."]
+    pub preheat_temperature: u32,
+    #[doc = "Minimum recommended heatbed tempeature."]
+    pub min_bed_temperature: u32,
+    #[doc = "Maximum recommended heatbed tempeature."]
+    pub max_bed_temperature: u32,
+    #[doc = "Minimum recommended temperature of the chamber."]
+    pub min_chamber_temperature: u32,
+    #[doc = "Maximum recommended temperature of the chamber."]
+    pub max_chamber_temperature: u32,
+    #[doc = "Ideal chamber temperature for printing."]
+    pub chamber_temperature: u32,
+    #[doc = "Width of the filament spool. Can be useful to know for spool holders, dryboxes and such."]
+    pub container_width: u32,
+    #[doc = "Diameter of the spool. Can be useful to know for spool holders, dryboxes and such."]
+    pub container_outer_diameter: u32,
+    #[doc = "Diameter of the inner cylinder the filament is spooled once.\n\nEquals to the minimum diameter of the filament winding."]
+    pub container_inner_diameter: u32,
+    #[doc = "Diameter of the center hole of the spool."]
+    pub container_hole_diameter: u32,
+    #[doc = "Viscosity of the material at 18 °C"]
+    pub viscosity_18c: f32,
+    #[doc = "Viscosity of the material at 25 °C"]
+    pub viscosity_25c: f32,
+    #[doc = "Viscosity of the material at 40 °C"]
+    pub viscosity_40c: f32,
+    #[doc = "Viscosity of the material at 60 °C"]
+    pub viscosity_60c: f32,
+    #[doc = "Maximum amount of material the container can hold."]
+    pub container_volumetric_capacity: f32,
+    #[doc = "Wavelength of the light the material has been designed to be cured with"]
+    pub cure_wavelength: u32,
 }
 #[repr(u32)]
 #[doc = "Contains material information that does not change during the package instance lifetime."]
@@ -376,4 +373,26 @@ pub enum MaterialType {
     TPI = 38u32,
     #[doc = "**Styrene-Butadiene-Styrene**\nA flexible, rubber-like material (a type of TPE) known for good durability. It is relatively easy to print for a flexible filament."]
     SBS = 39u32,
+}
+#[doc = "Dynamic data, typically usage tracking."]
+pub struct Aux {
+    #[doc = "Amount of material that was used up from the container\n\n`remaining_weight` = `instance_netto_full_weight` - `consumed_weight`"]
+    pub consumed_weight: f32,
+    #[doc = "Workgroup identifier, used for detecting first usage of the material. See the \"write protection\" section."]
+    pub workgroup: String,
+    #[doc = "Determines semantics of the fields in the general purpose key range.\n\nMUST be filled if any of the general purpose keys is used.\nSee \"Vendor-specific fields\""]
+    pub general_purpose_range_user: String,
+    #[doc = "Timestamp when the resin was last stirred.\n\nResins that have not been used for some time should be stirred before printing."]
+    pub last_stir_time: chrono::DateTime<chrono::Utc>,
+}
+#[doc = "Offsets and sizes within the `NDEF` payload."]
+pub struct Meta {
+    #[doc = "Offset of the main region, relative to the NDEF payload start.\n\nIf not specified, the main region immediately follows the meta section."]
+    pub main_region_offset: u32,
+    #[doc = "Allocation size of the main region.\n\nIf not specified, the region spans till the next region or payload end."]
+    pub main_region_size: u32,
+    #[doc = "Offset of the auxiliary region, relative to the NDEF payload start.\n\nOmitting this field means that the auxiliary region is not present."]
+    pub aux_region_offset: u32,
+    #[doc = "Allocation size of the auxiliary region.\n\nIf not specified, the region (if present) spans till the next region or payload end."]
+    pub aux_region_size: u32,
 }
