@@ -79,11 +79,6 @@ impl GetSchemaName for EnumVariantSchema {
 }
 
 impl GetDoc for EnumVariantSchema {
-    fn makes_doc(&self) -> bool {
-        let has_extra = self.has_parent() && (!self.implies.is_empty() || !self.hints.is_empty());
-        self.deprecated || self.display_name.is_some() || self.description.is_some() || has_extra
-    }
-
     fn get_doc(&self) -> Option<String> {
         use std::fmt::Write;
         let mut doc = String::new();
@@ -118,11 +113,6 @@ impl GetDoc for EnumVariantSchema {
 }
 
 impl GetAttributes for EnumVariantSchema {
-    #[inline]
-    fn makes_attributes(&self) -> bool {
-        self.description.is_some() || self.deprecated
-    }
-
     //noinspection DuplicatedCode
     fn get_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
@@ -140,11 +130,6 @@ impl GetAttributes for EnumVariantSchema {
 }
 
 impl GetVariant for EnumVariantSchema {
-    #[inline]
-    fn makes_variant(&self) -> bool {
-        !self.name.is_empty()
-    }
-
     fn get_variant(&self) -> Option<Variant> {
         let ident = self.get_ident()?;
         let key = self.key;

@@ -10,11 +10,6 @@ impl EnumArray {
 
 impl GetIdent for EnumArray {
     #[inline(always)]
-    fn makes_ident(&self) -> bool {
-        true
-    }
-
-    #[inline(always)]
     fn get_name(&self) -> Option<String> {
         Some(Self::NAME.to_string())
     }
@@ -24,11 +19,6 @@ impl GetPubVisibility for EnumArray {}
 
 impl GetDoc for EnumArray {
     #[inline(always)]
-    fn makes_doc(&self) -> bool {
-        true
-    }
-
-    #[inline(always)]
     fn get_doc(&self) -> Option<String> {
         Some(Self::DOC.to_string())
     }
@@ -37,10 +27,6 @@ impl GetDoc for EnumArray {
 impl GetDocAsAttributes for EnumArray {}
 
 impl AsItems for EnumArray {
-    fn makes_items(&self) -> bool {
-        true
-    }
-
     fn as_items(&self) -> Vec<Item> {
         let ident = self.get_ident();
         let vis = self.get_visibility();

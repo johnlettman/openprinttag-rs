@@ -19,11 +19,6 @@ impl Registry {
 
 impl AsItems for Registry {
     #[inline]
-    fn makes_items(&self) -> bool {
-        self.values().any(|v| v.is_item())
-    }
-
-    #[inline]
     fn as_items(&self) -> Vec<Item> {
         self.values().flat_map(|v| v.as_items()).collect()
     }

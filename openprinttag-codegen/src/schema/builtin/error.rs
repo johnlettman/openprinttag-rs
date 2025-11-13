@@ -4,10 +4,6 @@ use crate::schema::gen::{AsItem, AsItems};
 pub struct Error;
 
 impl AsItems for Error {
-    fn makes_items(&self) -> bool {
-        true
-    }
-
     fn as_items(&self) -> Vec<Item> {
         vec![
             parse_quote! {

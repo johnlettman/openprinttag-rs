@@ -112,20 +112,12 @@ impl ConfigStructSchema {
 }
 
 impl GetIdent for ConfigStructSchema {
-    fn makes_ident(&self) -> bool {
-        true
-    }
-
     fn get_name(&self) -> Option<String> {
         Some(Self::NAME.to_string())
     }
 }
 
 impl GetDoc for ConfigStructSchema {
-    fn makes_doc(&self) -> bool {
-        true
-    }
-
     fn get_doc(&self) -> Option<String> {
         Some(Self::DOC.to_string())
     }
@@ -136,10 +128,6 @@ impl GetDocAsAttributes for ConfigStructSchema {}
 impl GetPubVisibility for ConfigStructSchema {}
 
 impl GetFields for ConfigStructSchema {
-    fn makes_fields(&self) -> bool {
-        true
-    }
-
     fn get_fields(&self) -> Vec<Field> {
         let mut fields = Vec::new();
 
@@ -163,10 +151,6 @@ impl GetFields for ConfigStructSchema {
 }
 
 impl AsItems for ConfigStructSchema {
-    fn makes_items(&self) -> bool {
-        true
-    }
-
     fn as_items(&self) -> Vec<Item> {
         let vis = self.get_visibility();
         let ident = self.get_ident();

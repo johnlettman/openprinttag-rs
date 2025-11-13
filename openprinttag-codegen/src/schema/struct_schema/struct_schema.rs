@@ -30,11 +30,6 @@ impl GetPubVisibility for StructSchema {}
 
 impl GetDoc for StructSchema {
     #[inline(always)]
-    fn makes_doc(&self) -> bool {
-        self.description.is_some()
-    }
-
-    #[inline(always)]
     fn get_doc(&self) -> Option<String> {
         self.description.clone()
     }
@@ -43,11 +38,6 @@ impl GetDoc for StructSchema {
 impl GetDocAsAttributes for StructSchema {}
 
 impl GetType for StructSchema {
-    #[inline(always)]
-    fn makes_type(&self) -> bool {
-        true
-    }
-
     #[inline]
     fn get_type(&self) -> Option<Type> {
         Some(util::make_type(self.get_name()?).ok()?)
@@ -55,22 +45,12 @@ impl GetType for StructSchema {
 }
 
 impl GetFields for StructSchema {
-    #[inline(always)]
-    fn makes_fields(&self) -> bool {
-        !self.fields.is_empty()
-    }
-
     fn get_fields(&self) -> Vec<Field> {
         self.fields.iter().filter_map(|f| f.get_field()).collect()
     }
 }
 
 impl AsItem for StructSchema {
-    #[inline(always)]
-    fn is_item(&self) -> bool {
-        true
-    }
-
     #[inline]
     fn as_item(&self) -> Option<Item> {
         let ident = self.get_ident()?;

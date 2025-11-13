@@ -18,13 +18,6 @@ pub enum TypeSchema {
 }
 
 impl GetType for TypeSchema {
-    fn makes_type(&self) -> bool {
-        match self {
-            Self::None => false,
-            _ => true,
-        }
-    }
-
     fn get_type(&self) -> Option<Type> {
         match self {
             Self::Struct(s) | Self::Enum(s) => Some(make_type(s).ok()?),

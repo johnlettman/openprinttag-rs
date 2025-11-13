@@ -32,11 +32,6 @@ pub struct StructFieldSchema {
 
 impl GetIdent for StructFieldSchema {
     #[inline]
-    fn makes_ident(&self) -> bool {
-        self.name.is_some()
-    }
-
-    #[inline]
     fn get_name(&self) -> Option<String> {
         self.name.clone()
     }
@@ -46,22 +41,12 @@ impl GetPubVisibility for StructFieldSchema {}
 
 impl GetType for StructFieldSchema {
     #[inline]
-    fn makes_type(&self) -> bool {
-        self.field_type.makes_type()
-    }
-
-    #[inline]
     fn get_type(&self) -> Option<Type> {
         self.field_type.get_type()
     }
 }
 
 impl GetDoc for StructFieldSchema {
-    #[inline]
-    fn makes_doc(&self) -> bool {
-        self.description.is_some()
-    }
-
     fn get_doc(&self) -> Option<String> {
         let mut doc = String::new();
 
@@ -78,11 +63,6 @@ impl GetDoc for StructFieldSchema {
 }
 
 impl GetAttributes for StructFieldSchema {
-    #[inline]
-    fn makes_attributes(&self) -> bool {
-        self.description.is_some() || self.deprecated
-    }
-
     //noinspection DuplicatedCode
     fn get_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
@@ -100,11 +80,6 @@ impl GetAttributes for StructFieldSchema {
 }
 
 impl GetField for StructFieldSchema {
-    #[inline]
-    fn makes_field(&self) -> bool {
-        self.name.is_some() && self.makes_type()
-    }
-
     fn get_field(&self) -> Option<Field> {
         let attrs = self.get_attributes();
         let vis = self.get_visibility();

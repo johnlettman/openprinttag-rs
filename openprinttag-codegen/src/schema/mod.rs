@@ -28,14 +28,6 @@ pub enum Schema {
 
 impl AsItem for Schema {
     #[inline]
-    fn is_item(&self) -> bool {
-        match self {
-            Self::Enum(e) => e.is_item(),
-            Self::Struct(s) => s.is_item()
-        }
-    }
-
-    #[inline]
     fn as_item(&self) -> Option<Item> {
         match self {
             Self::Enum(e) => e.as_item(),

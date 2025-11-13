@@ -30,11 +30,6 @@ impl GetSchemaName for EnumSchema {
 impl GetPubVisibility for EnumSchema {}
 
 impl GetType for EnumSchema {
-    #[inline(always)]
-    fn makes_type(&self) -> bool {
-        true
-    }
-
     #[inline]
     fn get_type(&self) -> Option<Type> {
         Some(util::make_type(self.get_name()?).ok()?)
@@ -43,22 +38,12 @@ impl GetType for EnumSchema {
 
 impl GetDoc for EnumSchema {
     #[inline]
-    fn makes_doc(&self) -> bool {
-        self.description.is_some()
-    }
-
-    #[inline]
     fn get_doc(&self) -> Option<String> {
         self.description.clone()
     }
 }
 
 impl GetAttributes for EnumSchema {
-
-    fn makes_attributes(&self) -> bool {
-        true
-    }
-
     fn get_attributes(&self) -> Vec<Attribute> {
         let mut attrs = vec![parse_quote!(#[repr(u32)])];
 
@@ -71,21 +56,12 @@ impl GetAttributes for EnumSchema {
 }
 
 impl GetVariants for EnumSchema {
-    fn makes_variants(&self) -> bool {
-        !self.variants.is_empty() && self.variants.iter().any(|v| v.makes_variant())
-    }
-
     fn get_variants(&self) -> Vec<Variant> {
         self.variants.iter().filter_map(|v| v.get_variant()).collect()
     }
 }
 
 impl AsItem for EnumSchema {
-    #[inline(always)]
-    fn is_item(&self) -> bool {
-        true
-    }
-
     #[inline]
     fn as_item(&self) -> Option<Item> {
         let attrs = self.get_attributes();
