@@ -1,0 +1,44 @@
+use proc_macro2::Span;
+use crate::schema::gen::{GetType};
+use syn::{parse_quote, Type};
+use crate::schema::gen::util::make_type;
+
+#[derive(Debug, Clone)]
+pub enum TypeSchema {
+    Struct(String),
+    Enum(String),
+    EnumArray(String),
+    UUID,
+    String(usize),
+    Bytes(usize),
+    Integer { unit: Option<String>, example: Option<u32> },
+    Number { unit: Option<String>, example: Option<f32> },
+    Timestamp,
+    None,
+}
+
+impl GetType for TypeSchema {
+    fn makes_type(&self) -> bool {
+        match self {
+            Self::None => false,
+            _ => true,
+        }
+    }
+
+    fn get_type(&self) -> Option<Type> {
+        match self {
+            Self::Struct(s) | Self::Enum(s) => Some(make_type(s).ok()?),
+            Self::EnumArray(s) => Some(make_type(s).ok()?),
+            Self::UUID => Some(make_type("uuid::Uuid").ok()?),
+            Self::String(_) => Some(make_type("String").ok()?),
+            Self::Bytes(len) => {
+                let lit = syn::LitInt::new(&len.to_string(), Span::call_site());
+                Some(parse_quote! { [u8; #lit] })
+            }
+            Self::Integer { .. } => Some(make_type("u32").ok()?),
+            Self::Number { .. } => Some(make_type("f32").ok()?),
+            Self::Timestamp => Some(parse_quote! { chrono::DateTime<chrono::Utc> }),
+            Self::None => None,
+        }
+    }
+}

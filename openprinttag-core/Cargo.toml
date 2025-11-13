@@ -1,0 +1,21 @@
+[package]
+name = "openprinttag-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[features]
+default = ["std"]
+all = ["std"]
+
+std = []
+
+[dependencies.uuid]
+version = "1.18"
+features = ["v5"]
+
+[dependencies.chrono]
+version = "0.4"
+
+[build-dependencies]
+openprinttag-codegen = { path = "../openprinttag-codegen" }

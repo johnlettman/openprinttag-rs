@@ -4,12 +4,32 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[features]
+all = ["url-loader", "format-rustfmt"]
+default = ["url-loader", "format-rustfmt"]
+
+url-loader = ["dep:ureq"]
+
+format-rustfmt = ["dep:rustfmt"]
+
 [dependencies]
 thiserror = { version = "2.0" }
 
 syn = { version = "2.0", features = ["full"] }
-quote = "1.0"
+quote2 = { version = "0.9", features = []}
+prettyplease = "0.2"
 proc-macro2 = "1.0"
-strum = { version = "0.27", features = ["derive"] }
+num-traits = "0.2"
+
 serde = { version = "1.0", features = ["derive"] }
 serde_norway = "0.9"
+
+derive-new = "0.7"
+strum = { version = "0.27", features = ["derive"] }
+ureq = { version = "3.1", features = ["gzip", "rustls"], default-features = false, optional = true }
+
+parking_lot = "0.12"
+
+[dependencies.rustfmt]
+version = "0.8"
+optional = true

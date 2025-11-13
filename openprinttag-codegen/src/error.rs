@@ -1,27 +1,14 @@
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("no data path provided")]
-    NoDataPath,
+    #[error("no such schema: {0}")]
+    NoSchema(String),
 
-    #[error("failed to load data file from {path}: {source}")]
-    DataLoadError {
-        path: std::path::PathBuf,
+    #[error("error generating Rust tokens: {0}")]
+    SynError(#[from] syn::Error),
 
-        #[source]
-        source: std::io::Error,
-    },
+    #[error("failed to load schema: {0}")]
+    LoaderError(#[from] crate::loader::LoaderError),
 
-    #[error("failed to parse data YAML from {path}: {source}")]
-    YAMLParseError {
-        path: std::path::PathBuf,
-
-        #[source]
-        source: serde_norway::Error,
-    },
-
-    #[error("failed to generate code: {0}")]
-    GenError(#[from] syn::Error),
-
-    #[error("failed to generate type: {0}")]
-    GenTypeError(#[source] syn::Error),
+    #[error("schema deserialization error: {0}")]
+    DeserializeError(String),
 }

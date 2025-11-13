@@ -1,3 +1,7 @@
+use std::{borrow::Cow, hash::Hash};
+use syn::__private::quote::format_ident;
+use crate::schema::gen;
+
 /// Known acronyms and chemical abbreviations that should remain uppercase when
 /// converting names to CamelCase identifiers.
 ///
@@ -7,6 +11,16 @@ pub const ALL_CAPS: &[&str] = &[
     "PTFE", "PVC", "ABS", "PC", "PE", "PP", "PET", "PBT", "PA", "PU", "ESD", "FFF", "SLA", "EMI",
     "ID", "UUID", "GTIN",
 ];
+
+pub const SCHEMA_SUFFIXES: &[&str] = &["_enum", "_struct", "_fields"];
+
+pub fn normalize(schema_name: &str) -> String {
+    if schema_name.ends_with(".yaml") {
+        schema_name.to_owned()
+    } else {
+        format!("{schema_name}.yaml")
+    }
+}
 
 /// Converts a snake_case or underscore-separated name into a Rust-style
 /// CamelCase identifier.
@@ -29,20 +43,40 @@ pub const ALL_CAPS: &[&str] = &[
 /// assert_eq!(name::to_camel("material_class_enum"), "MaterialClassEnum");
 /// ```
 pub fn to_camel<S: AsRef<str>>(name: S) -> String {
-    name.as_ref()
-        .split('_')
+    let mut name = name.as_ref();
+
+    // strip ".yaml" if present
+    if let Some(stripped) = name.strip_suffix(".yaml") {
+        name = stripped;
+    }
+
+    // strip common schema suffixes
+    for suffix in SCHEMA_SUFFIXES {
+        if let Some(stripped) = name.strip_suffix(suffix) {
+            name = stripped;
+            break;
+        }
+    }
+
+    // perform CamelCase conversion
+    name.split('_')
         .map(|part| {
             if let Some(&upper) = ALL_CAPS.iter().find(|&&u| u.eq_ignore_ascii_case(part)) {
                 upper.to_string()
             } else {
                 let mut chars = part.chars();
                 match chars.next() {
-                    Some(first) => first.to_ascii_uppercase().to_string() + &chars.as_str(),
+                    Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
                     None => String::new(),
                 }
             }
         })
         .collect()
+}
+
+#[inline]
+pub fn to_ident<S: AsRef<str>>(name: S) -> syn::Ident {
+    format_ident!("{}", to_camel(name))
 }
 
 /// Converts a YAML schema enum filename (e.g., `"material_type_enum.yaml"`)

@@ -1,0 +1,37 @@
+use crate::loader::{Loader, LoaderError, LoaderExt, LoaderResult};
+use serde_norway::{from_str, Value};
+use std::{
+    fs::read_to_string,
+    io::Read,
+    path::{Path, PathBuf},
+};
+use crate::schema::name;
+
+#[derive(Debug, Clone)]
+pub struct DirLoader(PathBuf);
+
+impl DirLoader {
+    /// Creates a new directory loader rooted at the given directory.
+    #[inline]
+    pub fn new<P: AsRef<Path>>(dir: P) -> Self {
+        Self(dir.as_ref().to_path_buf())
+    }
+
+    /// Builds the full path to a schema within the directory.
+    #[inline]
+    pub fn path_for<N: AsRef<str>>(&self, schema: N) -> PathBuf {
+        self.0.join(name::normalize(schema.as_ref()))
+    }
+}
+
+impl Loader for DirLoader {
+    fn load_string(&self, schema: &str) -> LoaderResult<String> {
+        let path = self.path_for(schema);
+        read_to_string(&path).map_err(|source| LoaderError::FileIOError { path, source })
+    }
+
+    fn load_value(&self, schema: &str) -> LoaderResult<Value> {
+        from_str(self.load_string(schema.as_ref())?.as_str())
+            .map_err(|source| LoaderError::FileParseError { path: self.path_for(schema), source })
+    }
+}

@@ -1,0 +1,8 @@
+[package]
+name = "opt-codegen"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+openprinttag-codegen.path = "../openprinttag-codegen"
