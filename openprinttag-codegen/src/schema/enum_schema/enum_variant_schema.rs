@@ -2,7 +2,7 @@ use crate::{
     de::{DeserializeWithContext, WithContext},
     schema::{
         context::LocalContext,
-        gen::{GetAttributes, GetDoc, GetIdent, GetSchemaName, GetVariant},
+        gen::{GetAttributes, GetDoc, GetIdent, GetVariant},
     },
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -20,7 +20,7 @@ pub struct EnumVariantSchema {
     pub key: u32,
 
     #[serde(default)]
-    pub name: String,
+    pub name: Option<String>,
 
     #[serde(default)]
     pub display_name: Option<String>,
@@ -71,10 +71,9 @@ impl EnumVariantSchema {
     }
 }
 
-impl GetSchemaName for EnumVariantSchema {
-    #[inline]
-    fn get_schema_name(&self) -> String {
-        self.name.clone()
+impl GetIdent for EnumVariantSchema {
+    fn get_name(&self) -> Option<String> {
+        Some(name::to_camel(self.name.clone()?))
     }
 }
 

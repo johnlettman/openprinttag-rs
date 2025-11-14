@@ -39,8 +39,16 @@ impl AsItems for EnumArray {
                 #vis type #ident<T, const N: usize> = std::vec::Vec<T>;
             },
             parse_quote! {
-                #[cfg(not(feature = "std"))]
+                #[cfg(all(not(feature = "std"), feature = "alloc"))]
                 #(#attrs)*
+                #[doc = "(no `std`, using `alloc`)"]
+                #vis type #ident<T, const N: usize> = alloc::vec::Vec<T>;
+            },
+            parse_quote! {
+
+                #[cfg(all(not(feature = "std"), not(feature = "alloc")))]
+                #(#attrs)*
+                #[doc = "(no `std` and no `alloc`)"]
                 #vis type #ident<T, const N: usize> = heapless::Vec<T, N>;
             },
         ]

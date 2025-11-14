@@ -12,7 +12,6 @@ fn main() {
     let loader = GitHubLoader::new();
     let context = Context::new(Box::new(loader));
 
-
     let config = ConfigStructSchema::load(context, "config_nfcv").expect("should load schema");
     let out = Path::new("src/lib.rs");
     let generated = config.as_file_string();
