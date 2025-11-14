@@ -132,8 +132,14 @@ where
 pub trait AsFile {
     fn as_file(&self) -> File;
 
-    fn as_file_string(&self) -> String {
-        self.as_file().to_token_stream().to_string()
+    fn to_file_string(&self) -> String {
+        let file = self.as_file();
+
+        #[cfg(feature = "format")]
+        return prettyplease::unparse(&file);
+
+        #[cfg(not(feature = "format"))]
+        return file.to_token_stream().to_string();
     }
 }
 

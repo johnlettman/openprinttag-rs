@@ -5,31 +5,49 @@ authors.workspace = true
 edition.workspace = true
 
 [features]
-all = ["url-loader", "format-rustfmt"]
-default = ["url-loader", "format-rustfmt"]
+all = ["url-loader", "format"]
+default = ["url-loader", "format"]
 
 url-loader = ["dep:ureq"]
 
-format-rustfmt = ["dep:rustfmt"]
+format = ["dep:prettyplease"]
 
-[dependencies]
-thiserror = { version = "2.0" }
+[dependencies.thiserror]
+version = "2.0"
 
-syn = { version = "2.0", features = ["full"] }
-quote2 = { version = "0.9", features = []}
-prettyplease = "0.2"
-proc-macro2 = "1.0"
-num-traits = "0.2"
+[dependencies.syn]
+version = "2.0"
+features = ["full"]
 
-serde = { version = "1.0", features = ["derive"] }
-serde_norway = "0.9"
+[dependencies.proc-macro2]
+version = "1.0"
 
-derive-new = "0.7"
-strum = { version = "0.27", features = ["derive"] }
-ureq = { version = "3.1", features = ["gzip", "rustls"], default-features = false, optional = true }
+[dependencies.quote2]
+version = "0.9"
 
-parking_lot = "0.12"
-
-[dependencies.rustfmt]
-version = "0.8"
+[dependencies.prettyplease]
+version = "0.2"
 optional = true
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[dependencies.serde_norway]
+version = "0.9"
+
+[dependencies.derive-new]
+version = "0.7"
+
+[dependencies.strum]
+version = "0.27"
+features = ["derive"]
+
+[dependencies.ureq]
+version = "3.1"
+features = ["gzip", "rustls"]
+default-features = false
+optional = true
+
+[dependencies.parking_lot]
+version = "0.12"
