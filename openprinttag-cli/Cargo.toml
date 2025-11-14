@@ -1,5 +1,5 @@
 [package]
-name = "opt-codegen"
+name = "openprinttag-cli"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true

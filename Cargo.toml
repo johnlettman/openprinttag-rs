@@ -6,9 +6,7 @@ edition.workspace = true
 
 
 [workspace]
-members = [
-    "openprinttag-codegen"
-, "openprinttag-core", "opt-codegen"]
+members = ["openprinttag-codegen", "openprinttag-core", "openprinttag-cli"]
 
 [workspace.package]
 version = "0.1.0"
