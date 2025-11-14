@@ -9,6 +9,7 @@ default = ["std"]
 all = ["std"]
 
 std = ["thiserror/std"]
+alloc = []
 
 [dependencies.uuid]
 version = "1.18"
