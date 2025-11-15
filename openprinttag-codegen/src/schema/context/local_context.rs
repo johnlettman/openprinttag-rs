@@ -1,14 +1,16 @@
 use crate::{
     de::{DeserializeWithContext, WithContext},
     loader::{Loader, LoaderResult, LoaderSeedExt},
-    schema::{EnumSchema,
-        Schema, StructSchema,
+    schema::{
+        context::{
+            registry::{ContextRegister, Register},
+            Context, SharedContext,
+        },
+        EnumSchema, Schema, StructSchema,
     },
 };
 use serde_norway::Value;
 use std::{collections::HashMap, io::Read, sync::Arc};
-use crate::schema::context::{Context, SharedContext};
-use crate::schema::context::registry::{ContextRegister, Register};
 
 /// A transient, contextual frame used during deserialization.
 ///

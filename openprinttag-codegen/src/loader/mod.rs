@@ -18,9 +18,9 @@ mod github_loader;
 #[cfg(feature = "url-loader")]
 pub use url_loader::*;
 
+use crate::schema::name;
 #[cfg(feature = "url-loader")]
 pub use github_loader::*;
-use crate::schema::name;
 
 pub type LoaderResult<T> = Result<T, LoaderError>;
 
@@ -65,5 +65,3 @@ pub trait LoaderSeedExt: Loader {
 
 impl<T: Loader + ?Sized> LoaderExt for T {}
 impl<T: Loader + ?Sized> LoaderSeedExt for T {}
-
-

@@ -3,12 +3,12 @@ use crate::{
     schema::{
         context::LocalContext,
         gen::{GetAttributes, GetDoc, GetIdent, GetVariant},
+        name,
     },
 };
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 use syn::{parse_quote, Attribute, Variant};
-use crate::schema::name;
 
 pub type EnumVariantSchemas = Vec<EnumVariantSchema>;
 

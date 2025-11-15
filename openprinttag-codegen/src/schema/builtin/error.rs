@@ -1,10 +1,10 @@
+use crate::schema::gen::{ToItem, ToItems};
 use syn::{parse_quote, Item};
-use crate::schema::gen::{AsItem, AsItems};
 
 pub struct Error;
 
-impl AsItems for Error {
-    fn as_items(&self) -> Vec<Item> {
+impl ToItems for Error {
+    fn to_items(&self) -> Vec<Item> {
         vec![
             parse_quote! {
                 #[derive(Debug, thiserror::Error)]
@@ -32,7 +32,7 @@ impl AsItems for Error {
                         Self::DecodeError(e)
                     }
                 }
-            }
+            },
         ]
     }
 }

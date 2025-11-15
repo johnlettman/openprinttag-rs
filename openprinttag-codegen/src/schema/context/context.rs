@@ -1,11 +1,12 @@
 use crate::{
     loader::{Loader, LoaderResult},
-    schema::{Schema,
+    schema::{
+        context::registry::{ContextRegister, Register, Registry},
+        Schema,
     },
 };
 use serde_norway::Value;
 use std::io::Read;
-use crate::schema::context::registry::{ContextRegister, Register, Registry};
 
 /// A global environment containing:
 ///

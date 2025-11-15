@@ -1,11 +1,13 @@
-use crate::loader::{Loader, LoaderError, LoaderExt, LoaderResult};
+use crate::{
+    loader::{Loader, LoaderError, LoaderExt, LoaderResult},
+    schema::name,
+};
 use serde_norway::{from_str, Value};
 use std::{
     fs::read_to_string,
     io::Read,
     path::{Path, PathBuf},
 };
-use crate::schema::name;
 
 #[derive(Debug, Clone)]
 pub struct DirLoader(PathBuf);

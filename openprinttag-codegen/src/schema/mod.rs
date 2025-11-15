@@ -3,22 +3,20 @@ mod config;
 pub mod context;
 mod enum_schema;
 pub mod gen;
+pub mod name;
 mod resolve;
 mod struct_schema;
 mod type_schema;
-pub mod name;
 
+use crate::schema::gen::{GetSchemaName, ToItem};
 pub use builtin::*;
-use crate::{
-    schema::gen::AsItem,
-};
+pub use config::*;
 pub use enum_schema::*;
 pub use resolve::*;
 use std::sync::Arc;
 pub use struct_schema::*;
 use syn::Item;
 pub use type_schema::*;
-pub use config::*;
 
 #[derive(Debug, Clone)]
 pub enum Schema {
@@ -26,12 +24,22 @@ pub enum Schema {
     Struct(Arc<StructSchema>),
 }
 
-impl AsItem for Schema {
+impl GetSchemaName for Schema {
     #[inline]
-    fn as_item(&self) -> Option<Item> {
+    fn get_schema_name(&self) -> String {
         match self {
-            Self::Enum(e) => e.as_item(),
-            Self::Struct(s) => s.as_item()
+            Self::Enum(e) => e.get_schema_name(),
+            Self::Struct(s) => s.get_schema_name(),
+        }
+    }
+}
+
+impl ToItem for Schema {
+    #[inline]
+    fn to_item(&self) -> Option<Item> {
+        match self {
+            Self::Enum(e) => e.to_item(),
+            Self::Struct(s) => s.to_item(),
         }
     }
 }

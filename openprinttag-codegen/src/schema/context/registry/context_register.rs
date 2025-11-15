@@ -1,9 +1,12 @@
+use crate::{
+    de::WithContext,
+    loader::{Loader, LoaderSeedExt},
+    schema::{
+        context::{registry::Register, LocalContext},
+        EnumSchema, Schema, StructSchema,
+    },
+};
 use std::sync::Arc;
-use crate::de::WithContext;
-use crate::loader::{Loader, LoaderSeedExt};
-use crate::schema::{EnumSchema, Schema, StructSchema};
-use crate::schema::context::LocalContext;
-use crate::schema::context::registry::Register;
 
 pub trait ContextRegister: Register + Loader {
     fn load_and_insert_enum_from(&self, local: &LocalContext) -> crate::Result<String> {

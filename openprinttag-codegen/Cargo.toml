@@ -8,12 +8,19 @@ edition.workspace = true
 all = ["url-loader", "format"]
 default = ["url-loader", "format"]
 
-url-loader = ["dep:ureq"]
+tracing = ["dep:tracing"]
 
+url-loader = ["dep:ureq"]
 format = ["dep:prettyplease"]
 
 [dependencies.thiserror]
 version = "2.0"
+
+[dependencies.tracing]
+version = "0.1"
+features = ["std", "attributes", "log", "tracing-attributes"]
+default-features = false
+optional = true
 
 [dependencies.syn]
 version = "2.0"

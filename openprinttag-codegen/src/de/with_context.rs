@@ -1,7 +1,6 @@
-
+use crate::schema::context::LocalContext;
 use serde::{de::DeserializeSeed, Deserializer};
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
-use crate::schema::context::LocalContext;
 
 pub struct WithContext<'a, O>(pub &'a LocalContext<'a>, PhantomData<O>);
 

@@ -3,8 +3,8 @@ use crate::{
     schema::{
         context::LocalContext,
         gen::{
-            util, AsItem, GetAttributes, GetDoc, GetDocAsAttributes, GetIdent, GetPubVisibility,
-            GetSchemaName, GetType, GetVariant, GetVariants, GetVisibility,
+            util, GetAttributes, GetDoc, GetDocAsAttributes, GetIdent, GetPubVisibility,
+            GetSchemaName, GetSize, GetType, GetVariant, GetVariants, GetVisibility, ToItem,
         },
         EnumVariantSchemas,
     },
@@ -24,6 +24,13 @@ impl GetSchemaName for EnumSchema {
     #[inline]
     fn get_schema_name(&self) -> String {
         self.schema_name.clone()
+    }
+}
+
+impl GetSize for EnumSchema {
+    #[inline(always)]
+    fn get_size(&self) -> usize {
+        self.variants.len()
     }
 }
 
@@ -61,9 +68,9 @@ impl GetVariants for EnumSchema {
     }
 }
 
-impl AsItem for EnumSchema {
+impl ToItem for EnumSchema {
     #[inline]
-    fn as_item(&self) -> Option<Item> {
+    fn to_item(&self) -> Option<Item> {
         let attrs = self.get_attributes();
         let vis = self.get_visibility();
         let ident = self.get_ident()?;

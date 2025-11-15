@@ -1,11 +1,12 @@
 use crate::{
     de::{DeserializeWithContext, WithContext},
     schema::{
-        context::LocalContext,
+        context::{registry::Register, LocalContext},
         gen::{
-            GetAttributes, GetDoc, GetField, GetIdent, GetPubVisibility, GetType, GetVisibility,
+            GetAttributes, GetDoc, GetField, GetIdent, GetPubVisibility, GetSchemaName, GetSize,
+            GetType, GetVisibility,
         },
-        TypeSchema,
+        EnumSchema, EnumVariantSchema, Schema, TypeSchema,
     },
     Required,
 };
@@ -170,12 +171,12 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             None => None,
         };
 
-        fn register_enum<'de, D>(
+        fn seed_enum<'de, D>(
             local_context: &LocalContext,
             items_file: Option<String>,
             name_field: Option<String>,
             display_name_field: Option<String>,
-        ) -> Result<String, D::Error>
+        ) -> Result<EnumSchema, D::Error>
         where
             D: Deserializer<'de>,
         {
@@ -195,7 +196,7 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             let name_map = (!name_map.is_empty()).then_some(Arc::new(name_map));
             let mut enum_context = LocalContext::new_from(local_context, schema_name);
             enum_context.name_map = name_map;
-            enum_context.load_and_insert_enum().map_err(|e| D::Error::custom(e.to_string()))
+            enum_context.seed_local().map_err(|e| D::Error::custom(e.to_string()))
         }
 
         let field_type = match r#type.as_deref() {
@@ -213,18 +214,26 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             },
 
             Some("timestamp") => Ok(TypeSchema::Timestamp),
-            Some("enum") => Ok(TypeSchema::Enum(register_enum::<D>(
-                local_context,
-                items_file,
-                name_field,
-                display_name_field,
-            )?)),
-            Some("enum_array") => Ok(TypeSchema::EnumArray(register_enum::<D>(
-                local_context,
-                items_file,
-                name_field,
-                display_name_field,
-            )?)),
+            Some("enum") => {
+                let e = seed_enum::<D>(local_context, items_file, name_field, display_name_field)
+                    .map_err(|e| D::Error::custom(e))?;
+
+                let schema_name = e.get_schema_name();
+                let _ = local_context
+                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)))
+                    .ok_or(D::Error::custom("could not insert schema"))?;
+                Ok(TypeSchema::Enum(schema_name))
+            },
+            Some("enum_array") => {
+                let e = seed_enum::<D>(local_context, items_file, name_field, display_name_field)?;
+
+                let len = e.get_size();
+                let schema_name = e.get_schema_name();
+                let _ = local_context
+                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)))
+                    .ok_or(D::Error::custom("could not insert schema"))?;
+                Ok(TypeSchema::EnumArray(schema_name, len))
+            },
 
             Some(t) => Err(D::Error::custom(format!("unknown type: {}", t))),
             None => Ok(TypeSchema::None),

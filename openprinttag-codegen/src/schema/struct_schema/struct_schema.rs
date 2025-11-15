@@ -3,8 +3,8 @@ use crate::{
     schema::{
         context::LocalContext,
         gen::{
-            util, AsItem, GetAttributes, GetDoc, GetDocAsAttributes, GetField, GetFields, GetIdent,
-            GetPubVisibility, GetSchemaName, GetType, GetVisibility,
+            util, GetAttributes, GetDoc, GetDocAsAttributes, GetField, GetFields, GetIdent,
+            GetPubVisibility, GetSchemaName, GetType, GetVisibility, ToItem,
         },
         StructFieldSchemas,
     },
@@ -50,9 +50,9 @@ impl GetFields for StructSchema {
     }
 }
 
-impl AsItem for StructSchema {
+impl ToItem for StructSchema {
     #[inline]
-    fn as_item(&self) -> Option<Item> {
+    fn to_item(&self) -> Option<Item> {
         let ident = self.get_ident()?;
         let attrs = self.get_attributes();
         let vis = self.get_visibility();

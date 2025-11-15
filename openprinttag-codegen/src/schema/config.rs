@@ -4,20 +4,17 @@ use syn::{parse_quote, Attribute, Field, Fields, Item};
 
 use crate::{
     de::DeserializeWithContext,
-    loader::CrateDirLoader,
-
+    loader::{CrateDirLoader, GitHubLoader},
     schema::{
+        builtin,
+        context::{registry::Register, Context, LocalContext, SharedContext},
         gen::{
-            AsItems, GetAttributes, GetDoc, GetDocAsAttributes, GetFields, GetIdent,
-            GetPubVisibility, GetVisibility,
+            GetAttributes, GetDoc, GetDocAsAttributes, GetFields, GetIdent, GetPubVisibility,
+            GetVisibility, ToFile, ToItems,
         },
+        name,
     },
 };
-use crate::loader::GitHubLoader;
-use crate::schema::{builtin, name};
-use crate::schema::context::{Context, LocalContext, SharedContext};
-use crate::schema::context::registry::Register;
-use crate::schema::gen::AsFile;
 
 /// Represents an [OpenPrintTag] configuration schema.
 ///
@@ -150,8 +147,8 @@ impl GetFields for ConfigStructSchema {
     }
 }
 
-impl AsItems for ConfigStructSchema {
-    fn as_items(&self) -> Vec<Item> {
+impl ToItems for ConfigStructSchema {
+    fn to_items(&self) -> Vec<Item> {
         let vis = self.get_visibility();
         let ident = self.get_ident();
         let fields = self.get_fields_punctuated();
@@ -165,9 +162,9 @@ impl AsItems for ConfigStructSchema {
         };
 
         let mut items = vec![config_item];
-        items.extend(builtin::EnumArray.as_items());
-        items.extend(builtin::Error.as_items());
-        items.extend(self.context.values().flat_map(|s| s.as_items()));
+        items.extend(builtin::EnumArray.to_items());
+        items.extend(builtin::Error.to_items());
+        items.extend(self.context.values().flat_map(|s| s.to_items()));
 
         items
     }
@@ -224,4 +221,3 @@ impl<'a> DeserializeWithContext<'a> for ConfigStructSchema {
         Ok(config_schema)
     }
 }
-

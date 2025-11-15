@@ -1,5 +1,7 @@
+use crate::schema::gen::{
+    GetAttributes, GetDoc, GetDocAsAttributes, GetIdent, GetPubVisibility, GetVisibility, ToItems,
+};
 use syn::{parse_quote, Item};
-use crate::schema::gen::{AsItems, GetAttributes, GetDoc, GetDocAsAttributes, GetIdent, GetPubVisibility, GetVisibility};
 
 pub struct EnumArray;
 
@@ -26,8 +28,8 @@ impl GetDoc for EnumArray {
 
 impl GetDocAsAttributes for EnumArray {}
 
-impl AsItems for EnumArray {
-    fn as_items(&self) -> Vec<Item> {
+impl ToItems for EnumArray {
+    fn to_items(&self) -> Vec<Item> {
         let ident = self.get_ident();
         let vis = self.get_visibility();
         let attrs = self.get_attributes();

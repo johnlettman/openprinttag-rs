@@ -20,8 +20,8 @@
 
 mod context;
 mod local_context;
-mod shared_context;
 pub mod registry;
+mod shared_context;
 
 pub use context::*;
 pub use local_context::*;

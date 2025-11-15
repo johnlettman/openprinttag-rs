@@ -1,13 +1,15 @@
 use crate::{
     loader::{Loader, LoaderResult},
     schema::{
+        context::{
+            registry::{ContextRegister, Register},
+            Context,
+        },
         Schema,
     },
 };
 use serde_norway::Value;
 use std::{io::Read, sync::Arc};
-use crate::schema::context::Context;
-use crate::schema::context::registry::{ContextRegister, Register};
 
 /// Shared ownable context.
 /// This is the type most callers should pass around.

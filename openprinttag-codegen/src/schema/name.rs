@@ -1,6 +1,6 @@
+use crate::schema::gen;
 use std::{borrow::Cow, hash::Hash};
 use syn::__private::quote::format_ident;
-use crate::schema::gen;
 
 /// Known acronyms and chemical abbreviations that should remain uppercase when
 /// converting names to CamelCase identifiers.

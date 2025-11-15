@@ -1,8 +1,11 @@
 pub mod util;
 
-use quote2::ToTokens;
-use syn::{parse_quote, Attribute, Field, Type, Variant, Visibility, __private::quote::format_ident, punctuated::Punctuated, token::Comma, File};
 use crate::schema::name;
+use quote2::format_ident;
+use syn::{
+    parse_quote, punctuated::Punctuated, token::Comma, Attribute, Field, File, Type, Variant,
+    Visibility,
+};
 
 pub trait GetSchemaName {
     fn get_schema_name(&self) -> String;
@@ -95,6 +98,10 @@ pub trait GetField {
     fn get_field(&self) -> Option<Field>;
 }
 
+pub trait GetSize {
+    fn get_size(&self) -> usize;
+}
+
 pub trait GetFields {
     fn get_fields(&self) -> Vec<Field>;
 
@@ -111,29 +118,29 @@ impl<F: GetField> GetFields for F {
     }
 }
 
-pub trait AsItem {
-    fn as_item(&self) -> Option<syn::Item>;
+pub trait ToItem {
+    fn to_item(&self) -> Option<syn::Item>;
 }
 
-pub trait AsItems {
-    fn as_items(&self) -> Vec<syn::Item>;
+pub trait ToItems {
+    fn to_items(&self) -> Vec<syn::Item>;
 }
 
-impl<I> AsItems for I
+impl<I> ToItems for I
 where
-    I: AsItem,
+    I: ToItem,
 {
     #[inline]
-    fn as_items(&self) -> Vec<syn::Item> {
-        self.as_item().map(|i| vec![i]).unwrap_or_default()
+    fn to_items(&self) -> Vec<syn::Item> {
+        self.to_item().map(|i| vec![i]).unwrap_or_default()
     }
 }
 
-pub trait AsFile {
-    fn as_file(&self) -> File;
+pub trait ToFile {
+    fn to_file(&self) -> File;
 
     fn to_file_string(&self) -> String {
-        let file = self.as_file();
+        let file = self.to_file();
 
         #[cfg(feature = "format")]
         return prettyplease::unparse(&file);
@@ -143,13 +150,12 @@ pub trait AsFile {
     }
 }
 
-impl<I> AsFile for I where I: AsItems + GetAttributes {
+impl<I> ToFile for I
+where
+    I: ToItems + GetAttributes,
+{
     #[inline(always)]
-    fn as_file(&self) -> File {
-        File {
-            shebang: None,
-            attrs: self.get_attributes(),
-            items: self.as_items()
-        }
+    fn to_file(&self) -> File {
+        File { shebang: None, attrs: self.get_attributes(), items: self.to_items() }
     }
 }

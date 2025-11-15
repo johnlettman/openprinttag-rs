@@ -1,10 +1,14 @@
-use std::collections::hash_map::{Iter, Keys, Values};
-use std::collections::HashMap;
+use crate::schema::{
+    context::registry::Register,
+    gen::{ToItem, ToItems},
+    Schema,
+};
 use parking_lot::{RwLock, RwLockReadGuard};
+use std::collections::{
+    hash_map::{Iter, Keys, Values},
+    HashMap,
+};
 use syn::Item;
-use crate::schema::{Schema};
-use crate::schema::context::registry::{Register};
-use crate::schema::gen::{AsItem, AsItems};
 
 #[derive(Debug)]
 pub struct Registry {
@@ -17,10 +21,10 @@ impl Registry {
     }
 }
 
-impl AsItems for Registry {
+impl ToItems for Registry {
     #[inline]
-    fn as_items(&self) -> Vec<Item> {
-        self.values().flat_map(|v| v.as_items()).collect()
+    fn to_items(&self) -> Vec<Item> {
+        self.values().flat_map(|v| v.to_items()).collect()
     }
 }
 

@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::schema::{EnumSchema, Schema, StructSchema};
+use std::sync::Arc;
 
 pub trait Register {
     fn get(&self, schema_name: &str) -> Option<Schema>;

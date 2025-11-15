@@ -1,6 +1,8 @@
-use crate::loader::{GitHubLoader, Loader, LoaderError, LoaderResult};
+use crate::{
+    loader::{GitHubLoader, Loader, LoaderError, LoaderResult},
+    schema::name,
+};
 use std::io::Read;
-use crate::schema::name;
 
 #[derive(Debug, Clone)]
 pub struct URLLoader(String);
