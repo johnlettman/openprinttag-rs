@@ -38,7 +38,7 @@ impl GetPubVisibility for EnumSchema {}
 
 impl GetType for EnumSchema {
     #[inline]
-    fn get_type(&self) -> Option<Type> {
+    fn get_core_type(&self) -> Option<Type> {
         Some(util::make_type(self.get_name()?).ok()?)
     }
 }
@@ -51,7 +51,7 @@ impl GetDoc for EnumSchema {
 }
 
 impl GetAttributes for EnumSchema {
-    fn get_attributes(&self) -> Vec<Attribute> {
+    fn get_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = vec![parse_quote!(#[repr(u32)])];
 
         if let Some(doc) = self.get_doc_attribute() {
@@ -63,18 +63,18 @@ impl GetAttributes for EnumSchema {
 }
 
 impl GetVariants for EnumSchema {
-    fn get_variants(&self) -> Vec<Variant> {
-        self.variants.iter().filter_map(|v| v.get_variant()).collect()
+    fn get_core_variants(&self) -> Vec<Variant> {
+        self.variants.iter().filter_map(|v| v.get_core_variant()).collect()
     }
 }
 
 impl ToItem for EnumSchema {
     #[inline]
-    fn to_item(&self) -> Option<Item> {
-        let attrs = self.get_attributes();
+    fn to_core_item(&self) -> Option<Item> {
+        let attrs = self.get_core_attributes();
         let vis = self.get_visibility();
-        let ident = self.get_ident()?;
-        let variants = self.get_variants_punctuated();
+        let ident = self.get_core_ident()?;
+        let variants = self.get_core_variants_punctuated();
 
         Some(parse_quote! {
             #(#attrs)*

@@ -15,7 +15,7 @@ pub trait GetIdent {
     fn get_name(&self) -> Option<String>;
 
     #[inline]
-    fn get_ident(&self) -> Option<syn::Ident> {
+    fn get_core_ident(&self) -> Option<syn::Ident> {
         Some(format_ident!("{}", self.get_name()?))
     }
 }
@@ -58,44 +58,44 @@ pub trait GetDoc {
 pub trait GetDocAsAttributes: GetDoc {}
 
 pub trait GetAttributes {
-    fn get_attributes(&self) -> Vec<Attribute>;
+    fn get_core_attributes(&self) -> Vec<Attribute>;
 }
 
 impl<I> GetAttributes for I
 where
     I: GetDocAsAttributes,
 {
-    fn get_attributes(&self) -> Vec<Attribute> {
+    fn get_core_attributes(&self) -> Vec<Attribute> {
         self.get_doc_attribute().map(|d| vec![d]).unwrap_or_default()
     }
 }
 
 pub trait GetVariant {
-    fn get_variant(&self) -> Option<Variant>;
+    fn get_core_variant(&self) -> Option<Variant>;
 }
 
 pub trait GetVariants {
-    fn get_variants(&self) -> Vec<Variant>;
+    fn get_core_variants(&self) -> Vec<Variant>;
 
     #[inline]
-    fn get_variants_punctuated(&self) -> Punctuated<Variant, Comma> {
-        Punctuated::from_iter(self.get_variants())
+    fn get_core_variants_punctuated(&self) -> Punctuated<Variant, Comma> {
+        Punctuated::from_iter(self.get_core_variants())
     }
 }
 
 impl<V: GetVariant> GetVariants for V {
     #[inline]
-    fn get_variants(&self) -> Vec<Variant> {
-        self.get_variant().map(|v| vec![v]).unwrap_or_default()
+    fn get_core_variants(&self) -> Vec<Variant> {
+        self.get_core_variant().map(|v| vec![v]).unwrap_or_default()
     }
 }
 
 pub trait GetType {
-    fn get_type(&self) -> Option<Type>;
+    fn get_core_type(&self) -> Option<Type>;
 }
 
 pub trait GetField {
-    fn get_field(&self) -> Option<Field>;
+    fn get_core_field(&self) -> Option<Field>;
 }
 
 pub trait GetSize {
@@ -103,27 +103,27 @@ pub trait GetSize {
 }
 
 pub trait GetFields {
-    fn get_fields(&self) -> Vec<Field>;
+    fn get_core_fields(&self) -> Vec<Field>;
 
     #[inline]
     fn get_fields_punctuated(&self) -> Punctuated<Field, Comma> {
-        Punctuated::from_iter(self.get_fields())
+        Punctuated::from_iter(self.get_core_fields())
     }
 }
 
 impl<F: GetField> GetFields for F {
     #[inline]
-    fn get_fields(&self) -> Vec<Field> {
-        self.get_field().map(|f| vec![f]).unwrap_or_default()
+    fn get_core_fields(&self) -> Vec<Field> {
+        self.get_core_field().map(|f| vec![f]).unwrap_or_default()
     }
 }
 
 pub trait ToItem {
-    fn to_item(&self) -> Option<syn::Item>;
+    fn to_core_item(&self) -> Option<syn::Item>;
 }
 
 pub trait ToItems {
-    fn to_items(&self) -> Vec<syn::Item>;
+    fn to_core_items(&self) -> Vec<syn::Item>;
 }
 
 impl<I> ToItems for I
@@ -131,16 +131,16 @@ where
     I: ToItem,
 {
     #[inline]
-    fn to_items(&self) -> Vec<syn::Item> {
-        self.to_item().map(|i| vec![i]).unwrap_or_default()
+    fn to_core_items(&self) -> Vec<syn::Item> {
+        self.to_core_item().map(|i| vec![i]).unwrap_or_default()
     }
 }
 
 pub trait ToFile {
-    fn to_file(&self) -> File;
+    fn to_core_file(&self) -> File;
 
-    fn to_file_string(&self) -> String {
-        let file = self.to_file();
+    fn to_core_file_string(&self) -> String {
+        let file = self.to_core_file();
 
         #[cfg(feature = "format")]
         return prettyplease::unparse(&file);
@@ -155,7 +155,7 @@ where
     I: ToItems + GetAttributes,
 {
     #[inline(always)]
-    fn to_file(&self) -> File {
-        File { shebang: None, attrs: self.get_attributes(), items: self.to_items() }
+    fn to_core_file(&self) -> File {
+        File { shebang: None, attrs: self.get_core_attributes(), items: self.to_core_items() }
     }
 }

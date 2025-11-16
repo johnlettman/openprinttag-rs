@@ -125,7 +125,7 @@ impl GetDocAsAttributes for ConfigStructSchema {}
 impl GetPubVisibility for ConfigStructSchema {}
 
 impl GetFields for ConfigStructSchema {
-    fn get_fields(&self) -> Vec<Field> {
+    fn get_core_fields(&self) -> Vec<Field> {
         let mut fields = Vec::new();
 
         if let Some(meta_schema) = &self.meta_fields {
@@ -148,11 +148,11 @@ impl GetFields for ConfigStructSchema {
 }
 
 impl ToItems for ConfigStructSchema {
-    fn to_items(&self) -> Vec<Item> {
+    fn to_core_items(&self) -> Vec<Item> {
         let vis = self.get_visibility();
-        let ident = self.get_ident();
+        let ident = self.get_core_ident();
         let fields = self.get_fields_punctuated();
-        let attrs = self.get_attributes();
+        let attrs = self.get_core_attributes();
 
         let config_item: Item = parse_quote! {
             #(#attrs)*
@@ -162,9 +162,9 @@ impl ToItems for ConfigStructSchema {
         };
 
         let mut items = vec![config_item];
-        items.extend(builtin::EnumArray.to_items());
-        items.extend(builtin::Error.to_items());
-        items.extend(self.context.values().flat_map(|s| s.to_items()));
+        items.extend(builtin::EnumArray.to_core_items());
+        items.extend(builtin::Error.to_core_items());
+        items.extend(self.context.values().flat_map(|s| s.to_core_items()));
 
         items
     }

@@ -20,7 +20,7 @@ pub enum TypeSchema {
 }
 
 impl GetType for TypeSchema {
-    fn get_type(&self) -> Option<Type> {
+    fn get_core_type(&self) -> Option<Type> {
         match self {
             Self::Struct(s) | Self::Enum(s) => Some(make_type(s).ok()?),
             Self::EnumArray(e, size) => {

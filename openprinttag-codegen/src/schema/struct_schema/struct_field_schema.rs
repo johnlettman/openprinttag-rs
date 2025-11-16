@@ -42,8 +42,8 @@ impl GetPubVisibility for StructFieldSchema {}
 
 impl GetType for StructFieldSchema {
     #[inline]
-    fn get_type(&self) -> Option<Type> {
-        self.field_type.get_type()
+    fn get_core_type(&self) -> Option<Type> {
+        self.field_type.get_core_type()
     }
 }
 
@@ -65,7 +65,7 @@ impl GetDoc for StructFieldSchema {
 
 impl GetAttributes for StructFieldSchema {
     //noinspection DuplicatedCode
-    fn get_attributes(&self) -> Vec<Attribute> {
+    fn get_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
 
         if let Some(doc) = self.get_doc_attribute() {
@@ -81,11 +81,11 @@ impl GetAttributes for StructFieldSchema {
 }
 
 impl GetField for StructFieldSchema {
-    fn get_field(&self) -> Option<Field> {
-        let attrs = self.get_attributes();
+    fn get_core_field(&self) -> Option<Field> {
+        let attrs = self.get_core_attributes();
         let vis = self.get_visibility();
-        let ident = self.get_ident();
-        let ty = self.get_type()?;
+        let ident = self.get_core_ident();
+        let ty = self.get_core_type()?;
 
         Some(parse_quote! {
             #(#attrs)*

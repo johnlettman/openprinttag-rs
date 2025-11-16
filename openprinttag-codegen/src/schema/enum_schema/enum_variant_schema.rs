@@ -113,7 +113,7 @@ impl GetDoc for EnumVariantSchema {
 
 impl GetAttributes for EnumVariantSchema {
     //noinspection DuplicatedCode
-    fn get_attributes(&self) -> Vec<Attribute> {
+    fn get_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
 
         if let Some(doc) = self.get_doc_attribute() {
@@ -129,10 +129,10 @@ impl GetAttributes for EnumVariantSchema {
 }
 
 impl GetVariant for EnumVariantSchema {
-    fn get_variant(&self) -> Option<Variant> {
-        let ident = self.get_ident()?;
+    fn get_core_variant(&self) -> Option<Variant> {
+        let ident = self.get_core_ident()?;
         let key = self.key;
-        let attrs = self.get_attributes();
+        let attrs = self.get_core_attributes();
 
         Some(parse_quote! {
             #(#attrs)*

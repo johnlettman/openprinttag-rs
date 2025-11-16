@@ -29,10 +29,10 @@ impl GetDoc for EnumArray {
 impl GetDocAsAttributes for EnumArray {}
 
 impl ToItems for EnumArray {
-    fn to_items(&self) -> Vec<Item> {
-        let ident = self.get_ident();
+    fn to_core_items(&self) -> Vec<Item> {
+        let ident = self.get_core_ident();
         let vis = self.get_visibility();
-        let attrs = self.get_attributes();
+        let attrs = self.get_core_attributes();
 
         vec![
             parse_quote! {

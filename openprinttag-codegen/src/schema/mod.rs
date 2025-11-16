@@ -36,10 +36,10 @@ impl GetSchemaName for Schema {
 
 impl ToItem for Schema {
     #[inline]
-    fn to_item(&self) -> Option<Item> {
+    fn to_core_item(&self) -> Option<Item> {
         match self {
-            Self::Enum(e) => e.to_item(),
-            Self::Struct(s) => s.to_item(),
+            Self::Enum(e) => e.to_core_item(),
+            Self::Struct(s) => s.to_core_item(),
         }
     }
 }

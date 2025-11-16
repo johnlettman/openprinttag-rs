@@ -39,22 +39,22 @@ impl GetDocAsAttributes for StructSchema {}
 
 impl GetType for StructSchema {
     #[inline]
-    fn get_type(&self) -> Option<Type> {
+    fn get_core_type(&self) -> Option<Type> {
         Some(util::make_type(self.get_name()?).ok()?)
     }
 }
 
 impl GetFields for StructSchema {
-    fn get_fields(&self) -> Vec<Field> {
-        self.fields.iter().filter_map(|f| f.get_field()).collect()
+    fn get_core_fields(&self) -> Vec<Field> {
+        self.fields.iter().filter_map(|f| f.get_core_field()).collect()
     }
 }
 
 impl ToItem for StructSchema {
     #[inline]
-    fn to_item(&self) -> Option<Item> {
-        let ident = self.get_ident()?;
-        let attrs = self.get_attributes();
+    fn to_core_item(&self) -> Option<Item> {
+        let ident = self.get_core_ident()?;
+        let attrs = self.get_core_attributes();
         let vis = self.get_visibility();
         let fields = self.get_fields_punctuated();
 

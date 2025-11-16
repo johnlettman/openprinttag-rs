@@ -23,8 +23,8 @@ impl Registry {
 
 impl ToItems for Registry {
     #[inline]
-    fn to_items(&self) -> Vec<Item> {
-        self.values().flat_map(|v| v.to_items()).collect()
+    fn to_core_items(&self) -> Vec<Item> {
+        self.values().flat_map(|v| v.to_core_items()).collect()
     }
 }
 

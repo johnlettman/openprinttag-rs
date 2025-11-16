@@ -4,7 +4,7 @@ use syn::{parse_quote, Item};
 pub struct Error;
 
 impl ToItems for Error {
-    fn to_items(&self) -> Vec<Item> {
+    fn to_core_items(&self) -> Vec<Item> {
         vec![
             parse_quote! {
                 #[derive(Debug, thiserror::Error)]
