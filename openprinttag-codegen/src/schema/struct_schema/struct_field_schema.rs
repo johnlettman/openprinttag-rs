@@ -68,6 +68,10 @@ impl GetAttributes for StructFieldSchema {
     fn get_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
 
+        if let Some(key) = self.key {
+            attrs.push(parse_quote!(#[n(#key)]));
+        }
+
         if let Some(doc) = self.get_doc_attribute() {
             attrs.push(doc);
         }
@@ -136,6 +140,7 @@ pub(crate) struct RawStructFieldSchema {
 }
 
 impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
+    #[cfg_attr(feature = "tracing", tracing::instrument(debug, skip(deserializer)))]
     fn deserialize_with_context<'de, D>(
         deserializer: D,
         local_context: &'a LocalContext<'a>,
@@ -220,8 +225,7 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
 
                 let schema_name = e.get_schema_name();
                 let _ = local_context
-                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)))
-                    .ok_or(D::Error::custom("could not insert schema"))?;
+                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
                 Ok(TypeSchema::Enum(schema_name))
             },
             Some("enum_array") => {
@@ -230,8 +234,7 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
                 let len = e.get_size();
                 let schema_name = e.get_schema_name();
                 let _ = local_context
-                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)))
-                    .ok_or(D::Error::custom("could not insert schema"))?;
+                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
                 Ok(TypeSchema::EnumArray(schema_name, len))
             },
 

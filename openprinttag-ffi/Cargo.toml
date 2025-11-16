@@ -1,0 +1,11 @@
+[package]
+name = "openprinttag-ffi"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libc = "1.0.0-alpha.1"

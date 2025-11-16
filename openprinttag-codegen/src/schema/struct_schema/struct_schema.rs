@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use serde::{de::Error, Deserializer};
-use syn::{parse_quote, Field, Fields, FieldsNamed, Item, Type};
+use syn::{parse_quote, Attribute, Field, Fields, FieldsNamed, Item, Type};
 
 #[derive(Debug, Clone)]
 pub struct StructSchema {
@@ -35,7 +35,19 @@ impl GetDoc for StructSchema {
     }
 }
 
-impl GetDocAsAttributes for StructSchema {}
+impl GetAttributes for StructSchema {
+    fn get_core_attributes(&self) -> Vec<Attribute> {
+        let mut attrs = vec![
+            parse_quote!(#[derive(Debug, Clone, minicbor_derive::Encode, minicbor_derive::Decode)]),
+        ];
+
+        if let Some(doc_attr) = self.get_doc_attribute() {
+            attrs.push(doc_attr);
+        }
+
+        attrs
+    }
+}
 
 impl GetType for StructSchema {
     #[inline]
@@ -68,6 +80,7 @@ impl ToItem for StructSchema {
 }
 
 impl<'a> DeserializeWithContext<'a> for StructSchema {
+    #[cfg_attr(feature = "tracing", tracing::instrument(debug, skip(deserializer)))]
     fn deserialize_with_context<'de, D>(
         _: D,
         local_context: &'a LocalContext<'a>,

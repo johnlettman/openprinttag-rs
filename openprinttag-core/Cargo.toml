@@ -6,25 +6,24 @@ edition.workspace = true
 
 [features]
 default = ["std"]
-all = ["std"]
+all = ["std", "tracing"]
 
-std = ["thiserror/std"]
-alloc = []
+tracing = ["dep:tracing"]
 
-[dependencies.uuid]
-version = "1.18"
-features = ["v5"]
+std = ["thiserror/std", "minicbor/std", "minicbor-derive/std"]
+alloc = ["minicbor/alloc", "minicbor-derive/alloc"]
 
-[dependencies.chrono]
-version = "0.4"
+[dependencies]
+thiserror = { version = "2.0", default-features = false }
+tracing = { version = "0.1", optional = true }
 
-[dependencies.minicbor]
-version = "2.1"
-default-features = false
-
-[dependencies.thiserror]
-version = "2.0"
-default-features = false
+uuid = { version = "1.18", features = ["v5"] }
+chrono = { version = "0.4" }
+int-enum = "0.5"
+strum = { version = "0.27", features = ["derive"] }
+minicbor = { version = "2.1", default-features = false }
+minicbor-derive = { version = "0.18", default-features = false }
 
 [build-dependencies]
 openprinttag-codegen = { path = "../openprinttag-codegen" }
+tracing = { version = "0.1", optional = true }

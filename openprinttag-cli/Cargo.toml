@@ -4,5 +4,18 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
-[dependencies]
-openprinttag-codegen.path = "../openprinttag-codegen"
+[features]
+default = ["format"]
+all = ["format"]
+
+format = ["openprinttag-codegen/format"]
+
+[dependencies.clap]
+version = "4.5"
+features = ["derive", "color"]
+
+[dependencies.thiserror]
+version = "2.0"
+
+[dependencies.openprinttag-codegen]
+path = "../openprinttag-codegen"

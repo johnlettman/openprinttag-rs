@@ -15,6 +15,7 @@ use crate::{
         name,
     },
 };
+use crate::schema::{GetSchemas, Schema};
 
 /// Represents an [OpenPrintTag] configuration schema.
 ///
@@ -105,6 +106,12 @@ impl ConfigStructSchema {
         let shared_context = SharedContext::new(context);
         let local_context = LocalContext::new(shared_context, schema_name);
         local_context.seed_local().map_err(crate::Error::from)
+    }
+}
+
+impl GetSchemas for ConfigStructSchema {
+    fn get_schemas(&self) -> Vec<Schema> {
+        self.context.values().collect()
     }
 }
 

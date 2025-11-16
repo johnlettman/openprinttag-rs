@@ -1,10 +1,8 @@
-use std::fs;
-use std::path::Path;
-use std::process::Command;
-use openprinttag_codegen::loader::GitHubLoader;
-use openprinttag_codegen::schema::ConfigStructSchema;
-use openprinttag_codegen::schema::context::Context;
-use openprinttag_codegen::schema::gen::AsFile;
+use openprinttag_codegen::{
+    loader::GitHubLoader,
+    schema::{context::Context, gen::ToFile, ConfigStructSchema},
+};
+use std::{fs, path::Path, process::Command};
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
@@ -14,7 +12,7 @@ fn main() {
 
     let config = ConfigStructSchema::load(context, "config_nfcv").expect("should load schema");
     let out = Path::new("src/lib.rs");
-    let generated = config.as_file_string();
+    let generated = config.to_core_file_string();
 
     fs::write(out, &generated).expect("failed to write src/lib.rs");
 

@@ -1,7 +1,14 @@
-use crate::schema::gen::{ToItem, ToItems};
+use crate::schema::gen::{GetIdent, ToItem, ToItems};
 use syn::{parse_quote, Item};
 
 pub struct Error;
+
+impl GetIdent for Error {
+    #[inline(always)]
+    fn get_name(&self) -> Option<String> {
+        Some("Error".to_string())
+    }
+}
 
 impl ToItems for Error {
     fn to_core_items(&self) -> Vec<Item> {
@@ -13,7 +20,7 @@ impl ToItems for Error {
                     UnexpectedType,
 
                     #[error("invalid enum discriminant: {0}")]
-                    InvalidEnumDiscriminant(u32),
+                    InvalidEnumDiscriminant(u16),
 
                     #[error("too many items in the array")]
                     TooManyItems,

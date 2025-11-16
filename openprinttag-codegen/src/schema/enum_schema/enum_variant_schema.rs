@@ -17,7 +17,7 @@ pub struct EnumVariantSchema {
     #[serde(skip)]
     pub parent_name: Option<String>,
 
-    pub key: u32,
+    pub key: u16,
 
     #[serde(default)]
     pub name: Option<String>,
@@ -165,6 +165,7 @@ impl<'a> DeserializeWithContext<'a> for EnumVariantSchema {
 }
 
 impl<'a> DeserializeWithContext<'a> for EnumVariantSchemas {
+    #[cfg_attr(feature = "tracing", tracing::instrument(debug, skip(deserializer)))]
     fn deserialize_with_context<'de, D>(
         deserializer: D,
         local_context: &'a LocalContext<'a>,

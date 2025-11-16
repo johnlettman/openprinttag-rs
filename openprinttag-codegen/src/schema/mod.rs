@@ -8,7 +8,7 @@ mod resolve;
 mod struct_schema;
 mod type_schema;
 
-use crate::schema::gen::{GetSchemaName, ToItem};
+use crate::schema::gen::{GetSchemaName, ToItem, ToItems};
 pub use builtin::*;
 pub use config::*;
 pub use enum_schema::*;
@@ -24,6 +24,14 @@ pub enum Schema {
     Struct(Arc<StructSchema>),
 }
 
+pub trait GetSchema {
+    fn get_schema(&self) -> Schema;
+}
+
+pub trait GetSchemas {
+    fn get_schemas(&self) -> Vec<Schema>;
+}
+
 impl GetSchemaName for Schema {
     #[inline]
     fn get_schema_name(&self) -> String {
@@ -34,12 +42,12 @@ impl GetSchemaName for Schema {
     }
 }
 
-impl ToItem for Schema {
+impl ToItems for Schema {
     #[inline]
-    fn to_core_item(&self) -> Option<Item> {
+    fn to_core_items(&self) -> Vec<Item> {
         match self {
-            Self::Enum(e) => e.to_core_item(),
-            Self::Struct(s) => s.to_core_item(),
+            Self::Enum(e) => e.to_core_items(),
+            Self::Struct(s) => s.to_core_items(),
         }
     }
 }
