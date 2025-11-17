@@ -1,18 +1,32 @@
-use crate::schema::{
-    context::registry::Register,
-    gen::{ToItem, ToItems},
-    Schema,
+use crate::{
+    emit::EmitItems,
+    schema::{context::registry::Register, Schema},
 };
-use parking_lot::{RwLock, RwLockReadGuard};
-use std::collections::{
-    hash_map::{Iter, Keys, Values},
-    HashMap,
-};
+use crate::lock::RwLock;
+use std::{collections::HashMap, fmt};
 use syn::Item;
 
-#[derive(Debug)]
+
+pub type SchemaMap = RwLock<HashMap<String, Schema>>;
+
+/// A thread-safe registry of [`Schema`] objects.
+///
+/// The [`Registry`] maps schema names to their corresponding [`Schema`] values.
+/// Internally, the storage is protected by an [`RwLock`], which resolves to.
+///
+/// The registry supports:
+/// - Schema lookup ([`get`], [`contains`])
+/// - Schema insertion ([`insert`])
+/// - Lazy initialization ([`get_or_insert_with`])
+/// - Iteration over keys, values, or entries
+/// - Emitting Rust code via [`EmitItems`]
+///
+/// [`get`]: Registry::get
+/// [`contains`]: Registry::contains
+/// [`insert`]: Registry::insert
+/// [`get_or_insert_with`]: Registry::get_or_insert_with
 pub struct Registry {
-    map: RwLock<HashMap<String, Schema>>,
+    map: SchemaMap,
 }
 
 impl Registry {
@@ -21,10 +35,27 @@ impl Registry {
     }
 }
 
-impl ToItems for Registry {
-    #[inline]
-    fn to_core_items(&self) -> Vec<Item> {
-        self.values().flat_map(|v| v.to_core_items()).collect()
+impl fmt::Debug for Registry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let map = self.map.read();
+        let mut debug = f.debug_struct("Registry");
+
+        for (key, schema) in map.iter() {
+            debug.field(key, schema);
+        }
+
+        debug.finish()
+    }
+}
+
+impl EmitItems for Registry {
+    /// Collects all code-generation items emitted by contained schemas.
+    ///
+    /// This flattens the output of [`Schema::emit_core_items`] for each schema
+    /// stored in the registry. The registry therefore acts as the root assembly
+    /// point for code generation.
+    fn emit_core_items(&self) -> Vec<Item> {
+        self.values().flat_map(|v| v.emit_core_items()).collect()
     }
 }
 

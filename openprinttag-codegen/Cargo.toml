@@ -5,18 +5,26 @@ authors.workspace = true
 edition.workspace = true
 
 [features]
-all = ["url-loader", "format"]
-default = ["url-loader", "format"]
+all = ["url-loader", "format", "terminal-links", "parking_lot"]
+default = ["url-loader", "format", "parking_lot"]
 
-tracing = ["dep:tracing"]
+parking_lot = ["dep:parking_lot"]
+tracing = ["dep:tracing", "dep:tracing-core"]
 
 url-loader = ["dep:ureq"]
 format = ["dep:prettyplease"]
 
+terminal-links = ["dep:supports-hyperlinks", "dep:terminal-link"]
+
+gen-chrono = []
 
 [dependencies]
+git-version = "0.3"
+const_format = "0.2"
+
 thiserror = "2.0"
-tracing = { version = "0.1", optional = true }
+tracing = { version = "0.1", features = ["attributes"], optional = true }
+tracing-core = { version = "0.1", optional = true }
 
 syn = { version = "2.0", features = ["full"] }
 proc-macro2 = "1.0"
@@ -26,8 +34,11 @@ prettyplease = { version = "0.2", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_norway = "0.9"
 
+supports-hyperlinks = { version = "3.1", optional = true }
+terminal-link = { version = "0.1", optional = true }
+
 derive-new = "0.7"
 strum = { version = "0.27", features = ["derive"] }
 
 ureq = { version = "3.1", features = ["gzip", "rustls"], default-features = false, optional = true }
-parking_lot = "0.12"
+parking_lot = { version = "0.12", optional = true }

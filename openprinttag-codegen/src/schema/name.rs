@@ -1,16 +1,4 @@
-use crate::schema::gen;
-use std::{borrow::Cow, hash::Hash};
-use syn::__private::quote::format_ident;
-
-/// Known acronyms and chemical abbreviations that should remain uppercase when
-/// converting names to CamelCase identifiers.
-///
-/// This ensures that terms like `"ptfe"` and `"material_id"` are formatted as
-/// `"PTFE"` and `"MaterialID"` instead of `"Ptfe"` or `"MaterialId"`.
-pub const ALL_CAPS: &[&str] = &[
-    "PTFE", "PVC", "ABS", "PC", "PE", "PP", "PET", "PBT", "PA", "PU", "ESD", "FFF", "SLA", "EMI",
-    "ID", "UUID", "GTIN",
-];
+use quote2::format_ident;
 
 pub const SCHEMA_SUFFIXES: &[&str] = &["_enum", "_struct", "_fields"];
 
@@ -61,46 +49,22 @@ pub fn to_camel<S: AsRef<str>>(name: S) -> String {
     // perform CamelCase conversion
     name.split('_')
         .map(|part| {
-            if let Some(&upper) = ALL_CAPS.iter().find(|&&u| u.eq_ignore_ascii_case(part)) {
-                upper.to_string()
-            } else {
-                let mut chars = part.chars();
-                match chars.next() {
-                    Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
-                    None => String::new(),
-                }
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
+                None => String::new(),
             }
         })
         .collect()
 }
 
-#[inline]
 pub fn to_ident<S: AsRef<str>>(name: S) -> syn::Ident {
-    format_ident!("{}", to_camel(name))
+    format_ident!("{}", name.as_ref())
 }
 
-/// Converts a YAML schema enum filename (e.g., `"material_type_enum.yaml"`)
-/// into a Rust-style enum type name (e.g., `"MaterialType"`).
-///
-/// This strips `.yaml` and `_enum` suffixes before applying [`to_camel`].
-///
-/// # Type Parameters
-/// - `S`: Type of the name (typically `str` or [`String`]).
-///
-/// # Arguments
-/// - `name`: Name to convert.
-///
-/// # Example
-/// ```rust
-/// use openprinttag_codegen::name;
-///
-/// assert_eq!(name::to_enum_name("material_type_enum.yaml"), "MaterialType");
-/// ```
-pub fn to_enum_name<S: AsRef<str>>(name: S) -> String {
-    let name = name.as_ref();
-    let name = name.strip_suffix(".yaml").unwrap_or(name);
-    let name = name.strip_suffix("_enum").unwrap_or(name);
-    to_camel(name)
+#[inline]
+pub fn to_camel_ident<S: AsRef<str>>(name: S) -> syn::Ident {
+    to_ident(to_camel(name))
 }
 
 /// Builds a fully qualified Rust enum variant reference (e.g.,
@@ -125,7 +89,15 @@ pub fn to_enum_name<S: AsRef<str>>(name: S) -> String {
 /// ```
 #[inline]
 pub fn to_enum_reference<EN: AsRef<str>, EV: AsRef<str>>(name: EN, variant: EV) -> String {
-    format!("{}::{}", to_enum_name(name), to_camel(variant))
+    format!("{}::{}", to_camel(name), to_camel(variant))
+}
+
+#[inline]
+pub fn to_enum_references<EN: AsRef<str>, EV: AsRef<str>>(
+    name: EN,
+    variants: &Vec<EV>,
+) -> Vec<String> {
+    variants.iter().map(|variant| to_enum_reference(name.as_ref(), variant)).collect::<Vec<_>>()
 }
 
 /// Builds a Markdown-formatted reference link to a Rust enum variant.
@@ -201,4 +173,8 @@ pub fn to_enum_references_md<EN: AsRef<str>, EV: AsRef<str>>(
             .collect::<Vec<_>>()
             .join(", "),
     )
+}
+
+pub fn to_field_reference<SN: AsRef<str>, SF: AsRef<str>>(parent: SN, field: SF) -> String {
+    format!("{}::{}", to_camel(parent), field.as_ref())
 }

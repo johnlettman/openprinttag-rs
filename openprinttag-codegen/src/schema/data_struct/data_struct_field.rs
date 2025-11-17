@@ -1,54 +1,49 @@
 use crate::{
-    de::{DeserializeWithContext, WithContext},
+    de::DeserializeWithContext,
     schema::{
         context::{registry::Register, LocalContext},
-        gen::{
-            GetAttributes, GetDoc, GetField, GetIdent, GetPubVisibility, GetSchemaName, GetSize,
-            GetType, GetVisibility,
-        },
-        EnumSchema, EnumVariantSchema, Schema, TypeSchema,
+
+        DataEnum, Schema, DataTy,
     },
     Required,
 };
-use proc_macro2::Span;
-use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, fmt, sync::Arc};
-use syn::{parse_quote, Attribute, Field, Type};
-
-pub type StructFieldSchemas = Vec<StructFieldSchema>;
+use std::{collections::HashMap, sync::Arc};
+use syn::{parse_quote, Attribute, Expr, Field, Type};
+use crate::emit::{EmitAttributes, EmitField, EmitPubVisibility, EmitType, EmitVisibility, EmitIdent};
+use crate::schema::{DataSize, HasDocs, SchemaName};
 
 #[derive(Debug, Clone)]
-pub struct StructFieldSchema {
+pub struct DataStructField {
     parent_name: Option<String>,
 
-    key: Option<u32>,
-    name: Option<String>,
-    description: Option<String>,
+    pub key: u32,
+    pub name: Option<String>,
+    pub description: Option<String>,
 
-    required: Option<Required>,
-    deprecated: bool,
+    pub required: Option<Required>,
+    pub deprecated: bool,
 
-    field_type: TypeSchema,
+    pub field_type: DataTy,
 }
 
-impl GetIdent for StructFieldSchema {
+impl EmitIdent for DataStructField {
     #[inline]
     fn get_name(&self) -> Option<String> {
         self.name.clone()
     }
 }
 
-impl GetPubVisibility for StructFieldSchema {}
+impl EmitPubVisibility for DataStructField {}
 
-impl GetType for StructFieldSchema {
+impl EmitType for DataStructField {
     #[inline]
-    fn get_core_type(&self) -> Option<Type> {
-        self.field_type.get_core_type()
+    fn emit_core_type(&self) -> Option<Type> {
+        self.field_type.emit_core_type()
     }
 }
 
-impl GetDoc for StructFieldSchema {
-    fn get_doc(&self) -> Option<String> {
+impl HasDocs for DataStructField {
+    fn docs(&self) -> Option<String> {
         let mut doc = String::new();
 
         if let Some(description) = &self.description {
@@ -63,16 +58,12 @@ impl GetDoc for StructFieldSchema {
     }
 }
 
-impl GetAttributes for StructFieldSchema {
+impl EmitAttributes for DataStructField {
     //noinspection DuplicatedCode
-    fn get_core_attributes(&self) -> Vec<Attribute> {
+    fn emit_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
 
-        if let Some(key) = self.key {
-            attrs.push(parse_quote!(#[n(#key)]));
-        }
-
-        if let Some(doc) = self.get_doc_attribute() {
+        if let Some(doc) = self.doc_attribute() {
             attrs.push(doc);
         }
 
@@ -84,12 +75,12 @@ impl GetAttributes for StructFieldSchema {
     }
 }
 
-impl GetField for StructFieldSchema {
-    fn get_core_field(&self) -> Option<Field> {
-        let attrs = self.get_core_attributes();
-        let vis = self.get_visibility();
-        let ident = self.get_core_ident();
-        let ty = self.get_core_type()?;
+impl EmitField for DataStructField {
+    fn emit_core_field(&self) -> Option<Field> {
+        let attrs = self.emit_core_attributes();
+        let vis = self.emit_visibility();
+        let ident = self.rs_core_ident();
+        let ty = self.emit_core_type()?;
 
         Some(parse_quote! {
             #(#attrs)*
@@ -98,10 +89,11 @@ impl GetField for StructFieldSchema {
     }
 }
 
-#[derive(Deserialize)]
+
+#[derive(serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) struct RawStructFieldSchema {
-    pub(crate) key: Option<u32>,
+pub(crate) struct RawStructureField {
+    pub(crate) key: u32,
 
     #[serde(default)]
     pub(crate) name: Option<String>,
@@ -139,23 +131,23 @@ pub(crate) struct RawStructFieldSchema {
     pub(crate) example: Option<serde_norway::Value>,
 }
 
-impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
-    #[cfg_attr(feature = "tracing", tracing::instrument(debug, skip(deserializer)))]
+impl<'a> DeserializeWithContext<'a> for DataStructField {
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "debug", fields(%schema = local_context.schema_name), skip(deserializer, local_context)))]
     fn deserialize_with_context<'de, D>(
         deserializer: D,
         local_context: &'a LocalContext<'a>,
     ) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>,
+        D: serde::Deserializer<'de>,
     {
         use crate::de;
-        use serde::{de::Error, Deserialize};
+        use serde::{de::Error, Deserialize, Deserializer};
         use serde_norway::Value;
 
         let mut raw_map: Value = Value::deserialize(deserializer)?;
         de::remap_names(&mut raw_map, local_context.name_map.clone());
 
-        let RawStructFieldSchema {
+        let RawStructureField {
             key,
             name,
             description: raw_description,
@@ -168,7 +160,7 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             name_field,
             display_name_field,
             example,
-        } = RawStructFieldSchema::deserialize(raw_map).map_err(|e| Error::custom(e.to_string()))?;
+        } = RawStructureField::deserialize(raw_map).map_err(|e| Error::custom(e.to_string()))?;
 
         // description
         let description = match raw_description {
@@ -181,7 +173,7 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             items_file: Option<String>,
             name_field: Option<String>,
             display_name_field: Option<String>,
-        ) -> Result<EnumSchema, D::Error>
+        ) -> Result<DataEnum, D::Error>
         where
             D: Deserializer<'de>,
         {
@@ -205,44 +197,42 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
         }
 
         let field_type = match r#type.as_deref() {
-            Some("uuid") => Ok(TypeSchema::UUID),
-            Some("string") => Ok(TypeSchema::String(max_length.unwrap_or(255) as usize)),
-            Some("bytes") => Ok(TypeSchema::Bytes(max_length.unwrap_or(255) as usize)),
+            Some("uuid") => Ok(DataTy::UUID),
+            Some("string") => Ok(DataTy::String(max_length.unwrap_or(255) as usize)),
+            Some("bytes") => Ok(DataTy::Bytes(max_length.unwrap_or(255) as usize)),
             Some("int" | "integer") => {
                 let example = example.as_ref().and_then(|v| v.as_u64()).map(|v| v as u32);
-                Ok(TypeSchema::Integer { unit: unit.clone(), example })
+                Ok(DataTy::Integer { unit: unit.clone(), example })
             },
 
             Some("number") => {
                 let example = example.as_ref().and_then(|v| v.as_f64()).map(|v| v as f32);
-                Ok(TypeSchema::Number { unit: unit.clone(), example })
+                Ok(DataTy::Number { unit: unit.clone(), example })
             },
 
-            Some("timestamp") => Ok(TypeSchema::Timestamp),
+            Some("timestamp") => Ok(DataTy::Timestamp),
             Some("enum") => {
                 let e = seed_enum::<D>(local_context, items_file, name_field, display_name_field)
                     .map_err(|e| D::Error::custom(e))?;
 
                 let schema_name = e.get_schema_name();
-                let _ = local_context
-                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
-                Ok(TypeSchema::Enum(schema_name))
+                let _ = local_context.insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
+                Ok(DataTy::Enum(schema_name))
             },
             Some("enum_array") => {
                 let e = seed_enum::<D>(local_context, items_file, name_field, display_name_field)?;
 
-                let len = e.get_size();
+                let len = e.size();
                 let schema_name = e.get_schema_name();
-                let _ = local_context
-                    .insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
-                Ok(TypeSchema::EnumArray(schema_name, len))
+                let _ = local_context.insert(schema_name.clone(), Schema::Enum(Arc::new(e)));
+                Ok(DataTy::EnumArray(schema_name, len))
             },
 
             Some(t) => Err(D::Error::custom(format!("unknown type: {}", t))),
-            None => Ok(TypeSchema::None),
+            None => Ok(DataTy::None),
         }?;
 
-        Ok(StructFieldSchema {
+        Ok(DataStructField {
             parent_name: local_context.parent_name.clone(),
 
             key,
@@ -252,44 +242,5 @@ impl<'a> DeserializeWithContext<'a> for StructFieldSchema {
             deprecated,
             field_type,
         })
-    }
-}
-
-impl<'a> DeserializeWithContext<'a> for StructFieldSchemas {
-    fn deserialize_with_context<'de, D>(
-        deserializer: D,
-        local_context: &'a LocalContext<'a>,
-    ) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        use serde::de::{SeqAccess, Visitor};
-
-        struct FieldSeqVisitor<'a>(&'a LocalContext<'a>);
-
-        impl<'de, 'a> Visitor<'de> for FieldSeqVisitor<'a> {
-            type Value = Vec<StructFieldSchema>;
-
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("a sequence of StructFieldSchema")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let mut items = Vec::with_capacity(seq.size_hint().unwrap_or(4));
-
-                while let Some(variant) =
-                    seq.next_element_seed(WithContext::<StructFieldSchema>::new(self.0))?
-                {
-                    items.push(variant);
-                }
-
-                Ok(items)
-            }
-        }
-
-        deserializer.deserialize_seq(FieldSeqVisitor(local_context))
     }
 }

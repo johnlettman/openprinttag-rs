@@ -1,19 +1,19 @@
 use crate::{
     de::{DeserializeWithContext, WithContext},
+    emit::{EmitAttributes, EmitIdent, EmitVariant},
     schema::{
         context::LocalContext,
-        gen::{GetAttributes, GetDoc, GetIdent, GetVariant},
+        HasDocs,
         name,
     },
+    tracing::trace,
 };
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 use syn::{parse_quote, Attribute, Variant};
 
-pub type EnumVariantSchemas = Vec<EnumVariantSchema>;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EnumVariantSchema {
+pub struct DataEnumVariant {
     #[serde(skip)]
     pub parent_name: Option<String>,
 
@@ -48,7 +48,7 @@ pub struct EnumVariantSchema {
     pub implies: Vec<String>,
 }
 
-impl EnumVariantSchema {
+impl DataEnumVariant {
     #[inline(always)]
     pub fn with_parent_name(mut self, parent_name: Option<String>) -> Self {
         self.parent_name = parent_name;
@@ -60,6 +60,14 @@ impl EnumVariantSchema {
         self.parent_name.is_some()
     }
 
+    pub fn get_hints(&self) -> Vec<String> {
+        if let Some(parent_name) = &self.parent_name {
+            name::to_enum_references(parent_name, &self.hints)
+        } else {
+            Vec::new()
+        }
+    }
+
     #[inline]
     pub fn get_hints_md(&self) -> Option<String> {
         name::to_enum_references_md(self.parent_name.as_ref()?, &self.hints)
@@ -69,16 +77,24 @@ impl EnumVariantSchema {
     pub fn get_implies_md(&self) -> Option<String> {
         name::to_enum_references_md(self.parent_name.as_ref()?, &self.implies)
     }
+
+    pub fn get_implies(&self) -> Vec<String> {
+        if let Some(parent_name) = &self.parent_name {
+            name::to_enum_references(parent_name, &self.implies)
+        } else {
+            Vec::new()
+        }
+    }
 }
 
-impl GetIdent for EnumVariantSchema {
+impl EmitIdent for DataEnumVariant {
     fn get_name(&self) -> Option<String> {
         Some(name::to_camel(self.name.clone()?))
     }
 }
 
-impl GetDoc for EnumVariantSchema {
-    fn get_doc(&self) -> Option<String> {
+impl HasDocs for DataEnumVariant {
+    fn docs(&self) -> Option<String> {
         use std::fmt::Write;
         let mut doc = String::new();
 
@@ -111,12 +127,12 @@ impl GetDoc for EnumVariantSchema {
     }
 }
 
-impl GetAttributes for EnumVariantSchema {
+impl EmitAttributes for DataEnumVariant {
     //noinspection DuplicatedCode
-    fn get_core_attributes(&self) -> Vec<Attribute> {
+    fn emit_core_attributes(&self) -> Vec<Attribute> {
         let mut attrs = Vec::new();
 
-        if let Some(doc) = self.get_doc_attribute() {
+        if let Some(doc) = self.doc_attribute() {
             attrs.push(doc);
         }
 
@@ -128,11 +144,11 @@ impl GetAttributes for EnumVariantSchema {
     }
 }
 
-impl GetVariant for EnumVariantSchema {
-    fn get_core_variant(&self) -> Option<Variant> {
-        let ident = self.get_core_ident()?;
+impl EmitVariant for DataEnumVariant {
+    fn emit_core_variant(&self) -> Option<Variant> {
+        let ident = self.rs_core_ident()?;
         let key = self.key;
-        let attrs = self.get_core_attributes();
+        let attrs = self.emit_core_attributes();
 
         Some(parse_quote! {
             #(#attrs)*
@@ -141,7 +157,8 @@ impl GetVariant for EnumVariantSchema {
     }
 }
 
-impl<'a> DeserializeWithContext<'a> for EnumVariantSchema {
+impl<'a> DeserializeWithContext<'a> for DataEnumVariant {
+    #[cfg_attr(feature = "tracing", tracing::instrument(level = "debug", ret, fields(%schema = local_context.schema_name), skip(deserializer, local_context)))]
     fn deserialize_with_context<'de, D>(
         deserializer: D,
         local_context: &'a LocalContext<'a>,
@@ -154,52 +171,14 @@ impl<'a> DeserializeWithContext<'a> for EnumVariantSchema {
         use serde_norway::Value;
 
         let mut raw_map: Value = Value::deserialize(deserializer)?;
+        trace!("Raw enum variant map: {:?}", raw_map);
+
         remap_names(&mut raw_map, local_context.name_map.clone());
 
-        let mut schema: EnumVariantSchema =
-            EnumVariantSchema::deserialize(raw_map).map_err(D::Error::custom)?;
+        let mut schema: DataEnumVariant =
+            DataEnumVariant::deserialize(raw_map).map_err(D::Error::custom)?;
 
         schema.parent_name = local_context.parent_name.clone();
         Ok(schema)
-    }
-}
-
-impl<'a> DeserializeWithContext<'a> for EnumVariantSchemas {
-    #[cfg_attr(feature = "tracing", tracing::instrument(debug, skip(deserializer)))]
-    fn deserialize_with_context<'de, D>(
-        deserializer: D,
-        local_context: &'a LocalContext<'a>,
-    ) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        use serde::de::{SeqAccess, Visitor};
-
-        struct VariantSeqVisitor<'a>(&'a LocalContext<'a>);
-
-        impl<'de, 'a> Visitor<'de> for VariantSeqVisitor<'a> {
-            type Value = Vec<EnumVariantSchema>;
-
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("a sequence of EnumVariantSchema")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let mut items = Vec::with_capacity(seq.size_hint().unwrap_or(4));
-
-                while let Some(variant) =
-                    seq.next_element_seed(WithContext::<EnumVariantSchema>::new(self.0))?
-                {
-                    items.push(variant);
-                }
-
-                Ok(items)
-            }
-        }
-
-        deserializer.deserialize_seq(VariantSeqVisitor(local_context))
     }
 }

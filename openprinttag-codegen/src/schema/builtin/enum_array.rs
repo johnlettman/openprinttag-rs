@@ -1,7 +1,6 @@
-use crate::schema::gen::{
-    GetAttributes, GetDoc, GetDocAsAttributes, GetIdent, GetPubVisibility, GetVisibility, ToItems,
-};
+use crate::emit::{EmitAttributes, EmitIdent, EmitPubVisibility, EmitVisibility, EmitItems, EmitDocsAsAttributes};
 use syn::{parse_quote, Item};
+use crate::schema::HasDocs;
 
 pub struct EnumArray;
 
@@ -10,29 +9,29 @@ impl EnumArray {
     pub const DOC: &'static str = include_str!("../docs/enum_array.md");
 }
 
-impl GetIdent for EnumArray {
+impl EmitIdent for EnumArray {
     #[inline(always)]
     fn get_name(&self) -> Option<String> {
         Some(Self::NAME.to_string())
     }
 }
 
-impl GetPubVisibility for EnumArray {}
+impl EmitPubVisibility for EnumArray {}
 
-impl GetDoc for EnumArray {
+impl HasDocs for EnumArray {
     #[inline(always)]
-    fn get_doc(&self) -> Option<String> {
+    fn docs(&self) -> Option<String> {
         Some(Self::DOC.to_string())
     }
 }
 
-impl GetDocAsAttributes for EnumArray {}
+impl EmitDocsAsAttributes for EnumArray {}
 
-impl ToItems for EnumArray {
-    fn to_core_items(&self) -> Vec<Item> {
-        let ident = self.get_core_ident();
-        let vis = self.get_visibility();
-        let attrs = self.get_core_attributes();
+impl EmitItems for EnumArray {
+    fn emit_core_items(&self) -> Vec<Item> {
+        let ident = self.rs_core_ident();
+        let vis = self.emit_visibility();
+        let attrs = self.emit_core_attributes();
 
         vec![
             parse_quote! {

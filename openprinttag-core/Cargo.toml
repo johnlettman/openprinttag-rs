@@ -5,25 +5,42 @@ authors.workspace = true
 edition.workspace = true
 
 [features]
-default = ["std"]
-all = ["std", "tracing"]
+default = ["std", "tracing", "chrono"]
+all = ["std", "tracing", "build-tracing"]
 
 tracing = ["dep:tracing"]
+build-tracing   = ["dep:tracing-subscriber", "openprinttag-codegen/tracing", "dep:tracing-build-script", "dep:tracing-forest"]
+build-tracing-tree = ["dep:tracing-forest"]
 
-std = ["thiserror/std", "minicbor/std", "minicbor-derive/std"]
-alloc = ["minicbor/alloc", "minicbor-derive/alloc"]
+std = ["thiserror/std", "minicbor/std", "time/std", "chrono/std"]
+alloc = ["minicbor/alloc", "time/alloc", "chrono/alloc"]
+
+chrono = ["dep:chrono"]
+time = ["dep:time"]
 
 [dependencies]
 thiserror = { version = "2.0", default-features = false }
+
 tracing = { version = "0.1", optional = true }
 
 uuid = { version = "1.18", features = ["v5"] }
-chrono = { version = "0.4" }
+
 int-enum = "0.5"
 strum = { version = "0.27", features = ["derive"] }
 minicbor = { version = "2.1", default-features = false }
-minicbor-derive = { version = "0.18", default-features = false }
+minicbor-derive = "0.18.2"
+
+time = { version = "0.3", default-features = false, optional = true }
+chrono = { version = "0.4", default-features = false, optional = true }
+
+
+
+
+
 
 [build-dependencies]
 openprinttag-codegen = { path = "../openprinttag-codegen" }
-tracing = { version = "0.1", optional = true }
+
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
+tracing-build-script = { version = "0.1.0", optional = true }
+tracing-forest = {version = "0.3.0", optional = true }

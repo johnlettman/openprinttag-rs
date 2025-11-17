@@ -1,21 +1,17 @@
-use quote2::ToTokens;
 use serde::{de::Error, Deserialize, Deserializer, Serialize};
-use syn::{parse_quote, Attribute, Field, Fields, Item};
+use syn::{parse_quote, Field, Item};
 
 use crate::{
     de::DeserializeWithContext,
-    loader::{CrateDirLoader, GitHubLoader},
     schema::{
         builtin,
         context::{registry::Register, Context, LocalContext, SharedContext},
-        gen::{
-            GetAttributes, GetDoc, GetDocAsAttributes, GetFields, GetIdent, GetPubVisibility,
-            GetVisibility, ToFile, ToItems,
-        },
-        name,
+        name, GetSchemas, Schema,
     },
 };
-use crate::schema::{GetSchemas, Schema};
+use crate::emit::{EmitFields, EmitItems, EmitPubVisibility, EmitVisibility, EmitIdent, EmitDocsAsAttributes, EmitAttributes};
+use crate::emit::util::emit_doc_attribute;
+use crate::schema::HasDocs;
 
 /// Represents an [OpenPrintTag] configuration schema.
 ///
@@ -57,7 +53,7 @@ use crate::schema::{GetSchemas, Schema};
 /// [OpenPrintTag]: https://openprinttag.org/
 /// [OpenPrintTag data layout]: https://specs.openprinttag.org/#/nfc_data_format
 #[derive(Debug, Clone)]
-pub struct ConfigStructSchema {
+pub struct DataPrintTag {
     schema_name: String,
 
     context: SharedContext,
@@ -91,7 +87,7 @@ pub struct ConfigStructSchema {
     pub aux_fields: Option<String>,
 }
 
-impl ConfigStructSchema {
+impl DataPrintTag {
     const NAME: &'static str = "PrintTag";
     const DOC: &'static str = include_str!("docs/print_tag.md");
 
@@ -109,69 +105,73 @@ impl ConfigStructSchema {
     }
 }
 
-impl GetSchemas for ConfigStructSchema {
+impl GetSchemas for DataPrintTag {
     fn get_schemas(&self) -> Vec<Schema> {
         self.context.values().collect()
     }
 }
 
-impl GetIdent for ConfigStructSchema {
+impl EmitIdent for DataPrintTag {
     fn get_name(&self) -> Option<String> {
         Some(Self::NAME.to_string())
     }
 }
 
-impl GetDoc for ConfigStructSchema {
-    fn get_doc(&self) -> Option<String> {
+impl HasDocs for DataPrintTag {
+    fn docs(&self) -> Option<String> {
         Some(Self::DOC.to_string())
     }
 }
 
-impl GetDocAsAttributes for ConfigStructSchema {}
+impl EmitPubVisibility for DataPrintTag {}
 
-impl GetPubVisibility for ConfigStructSchema {}
-
-impl GetFields for ConfigStructSchema {
-    fn get_core_fields(&self) -> Vec<Field> {
+impl EmitFields for DataPrintTag {
+    fn emit_core_fields(&self) -> Vec<Field> {
         let mut fields = Vec::new();
 
-        if let Some(meta_schema) = &self.meta_fields {
-            let meta_type = name::to_ident(meta_schema);
-            fields.push(parse_quote! { pub meta: #meta_type });
+        macro_rules! push_fields {
+            ($fields:expr, $schema:expr, $field:ident, $doc:expr) => {
+                if let Some(schema) = $schema.as_ref() {
+                    let ty = name::to_camel_ident(schema);
+                    let doc_attr = emit_doc_attribute($doc);
+                    $fields.push(parse_quote! {
+                        #doc_attr
+                        pub $field: #ty
+                    });
+                }
+            };
         }
 
-        if let Some(main_schema) = &self.main_fields {
-            let main_type = name::to_ident(main_schema);
-            fields.push(parse_quote! { pub main: #main_type });
-        }
-
-        if let Some(aux_schema) = &self.aux_fields {
-            let aux_type = name::to_ident(aux_schema);
-            fields.push(parse_quote! { pub aux: #aux_type });
-        }
+        push_fields!(fields, self.meta_fields, meta, Self::META_DOC);
+        push_fields!(fields, self.main_fields, main, Self::MAIN_DOC);
+        push_fields!(fields, self.aux_fields, aux, Self::AUX_DOC);
 
         fields
     }
 }
 
-impl ToItems for ConfigStructSchema {
-    fn to_core_items(&self) -> Vec<Item> {
-        let vis = self.get_visibility();
-        let ident = self.get_core_ident();
-        let fields = self.get_fields_punctuated();
-        let attrs = self.get_core_attributes();
+impl EmitDocsAsAttributes for DataPrintTag {}
 
-        let config_item: Item = parse_quote! {
-            #(#attrs)*
-            #vis struct #ident {
-                #fields
-            }
-        };
+impl EmitItems for DataPrintTag {
+    fn emit_core_items(&self) -> Vec<Item> {
+        let vis = self.emit_visibility();
+        let ident = self.rs_core_ident();
+        let fields = self.emit_core_fields();
+        let attrs = self.emit_core_attributes();
 
-        let mut items = vec![config_item];
-        items.extend(builtin::EnumArray.to_core_items());
-        items.extend(builtin::Error.to_core_items());
-        items.extend(self.context.values().flat_map(|s| s.to_core_items()));
+        let mut items = vec![
+            parse_quote! {
+                #(#attrs)*
+                #vis struct #ident {
+                    #(#fields),*
+                }
+            },
+        ];
+        items.extend(builtin::EnumArray.emit_core_items());
+        items.extend(builtin::Error.emit_core_items());
+        items.extend(builtin::Timestamp.emit_core_items());
+        items.extend(builtin::Uuid.emit_core_items());
+        items.extend(self.context.values().flat_map(|s| s.emit_core_items()));
 
         items
     }
@@ -186,7 +186,7 @@ pub(crate) struct RawConfigStructSchema {
     pub(crate) aux_fields: Option<String>,
 }
 
-impl<'a> DeserializeWithContext<'a> for ConfigStructSchema {
+impl<'a> DeserializeWithContext<'a> for DataPrintTag {
     fn deserialize_with_context<'de, D>(
         deserializer: D,
         local_context: &'a LocalContext<'a>,
@@ -197,25 +197,24 @@ impl<'a> DeserializeWithContext<'a> for ConfigStructSchema {
         let RawConfigStructSchema { mime_type, root, meta_fields, main_fields, aux_fields } =
             RawConfigStructSchema::deserialize(deserializer)?;
 
-        if let Some(meta_fields) = meta_fields.as_ref() {
-            let meta_context = LocalContext::new_from(local_context, meta_fields.as_str())
-                .with_description(Self::META_DOC);
-            meta_context.load_and_insert_struct().map_err(|e| D::Error::custom(e.to_string()))?;
+        macro_rules! load_struct {
+            ($schema:expr, $doc:expr) => {
+                if let Some(name) = $schema.as_ref() {
+                    let context =
+                        LocalContext::new_from(local_context, name.as_str()).with_description($doc);
+                    context.load_and_insert_struct().map_err(|e| {
+                        D::Error::custom(format!("failed to load schema '{}': {}", name, e))
+                    })?;
+                }
+            };
+            () => {};
         }
 
-        if let Some(main_fields) = main_fields.as_ref() {
-            let meta_context = LocalContext::new_from(local_context, main_fields.as_str())
-                .with_description(Self::MAIN_DOC);
-            meta_context.load_and_insert_struct().map_err(|e| D::Error::custom(e.to_string()))?;
-        }
+        load_struct!(meta_fields, Self::META_DOC);
+        load_struct!(main_fields, Self::MAIN_DOC);
+        load_struct!(aux_fields, Self::AUX_DOC);
 
-        if let Some(aux_fields) = aux_fields.as_ref() {
-            let meta_context = LocalContext::new_from(local_context, aux_fields.as_str())
-                .with_description(Self::AUX_DOC);
-            meta_context.load_and_insert_struct().map_err(|e| D::Error::custom(e.to_string()))?;
-        }
-
-        let config_schema = ConfigStructSchema {
+        let config_schema = DataPrintTag {
             schema_name: local_context.schema_name.to_string(),
             context: local_context.context.clone(),
             mime_type,

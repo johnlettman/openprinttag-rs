@@ -6,7 +6,7 @@ use crate::{
             registry::{ContextRegister, Register},
             Context, SharedContext,
         },
-        EnumSchema, Schema, StructSchema,
+        DataEnum, DataStruct, Schema,
     },
 };
 use serde_norway::Value;
@@ -92,13 +92,13 @@ impl<'a> LocalContext<'a> {
 
     /// Convenience for inserting enum schemas.c
     #[inline(always)]
-    pub fn insert_enum_local(&self, enum_schema: Arc<EnumSchema>) -> Option<Schema> {
+    pub fn insert_enum_local(&self, enum_schema: Arc<DataEnum>) -> Option<Schema> {
         self.insert_enum(self.schema_name, enum_schema)
     }
 
     /// Convenience for inserting struct schemas.
     #[inline(always)]
-    pub fn insert_struct_local(&self, struct_schema: Arc<StructSchema>) -> Option<Schema> {
+    pub fn insert_struct_local(&self, struct_schema: Arc<DataStruct>) -> Option<Schema> {
         self.insert_struct(self.schema_name, struct_schema)
     }
 
